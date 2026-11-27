@@ -46,10 +46,15 @@ body {
 .game[data-screen="info"] { background-image: none; }
 
 .game[data-screen="home"],
+.game[data-screen="defeat"],
 .game[data-screen="results"] {
     grid-template-columns: minmax(0, 1fr);
     width: min(100%, 33rem);
     background: #080707 var(--paper) center top / cover;
+}
+
+.game[data-screen="defeat"] {
+    background-image: radial-gradient(ellipse at 50% 57%, #440f164f, transparent 62%), var(--paper);
 }
 
 .game[data-screen="info"]::before {
@@ -62,8 +67,7 @@ body {
     content: "";
 }
 
-.game[data-killer="true"]::before,
-.game[data-screen="defeat"]::before {
+.game[data-killer="true"]::before {
     position: absolute;
     z-index: -1;
     inset: 0;
@@ -88,11 +92,12 @@ body {
 /* Position each crop against the original 864 × 1536 artwork. */
 .reference-art,
 .menu-button::before,
+.defeat-answer::before,
 .record-card:first-child .record-heading::after,
 .results-list div::before,
 .results-list div::after,
 .score-frame::before,
-.result-restart::before {
+.ornate-action::before {
     background-image: var(--art);
     background-repeat: no-repeat;
     background-size: calc(864 / var(--crop-width) * 100%) calc(1536 / var(--crop-height) * 100%);
@@ -239,7 +244,8 @@ button:disabled { cursor: default; opacity: 0.56; }
 }
 
 .menu-button::before,
-.result-restart::before {
+.defeat-answer::before,
+.ornate-action::before {
     position: absolute;
     z-index: -1;
     inset: 0;
@@ -248,7 +254,8 @@ button:disabled { cursor: default; opacity: 0.56; }
     content: "";
 }
 
-.menu-button::before {
+.menu-button::before,
+.defeat-answer::before {
     --art: var(--menu-art);
     --crop-x: 66;
     --crop-y: 625;
@@ -257,7 +264,7 @@ button:disabled { cursor: default; opacity: 0.56; }
 }
 
 .menu-button.inscribed:hover:not(:disabled),
-.result-restart.inscribed:hover:not(:disabled) {
+.ornate-action.inscribed:hover:not(:disabled) {
     background-color: #300d0d9c;
     color: #fff1df;
 }
@@ -499,14 +506,71 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
 
 .defeat-screen,
 .result-screen { text-align: center; }
-.defeat-screen { display: grid; align-content: center; min-height: 100svh; }
-.defeat-title img {
-    display: block;
-    width: min(62cqw, 22rem);
-    height: auto;
-    margin-inline: auto;
+
+.defeat-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100svh;
+    padding: 0;
 }
-.defeat-solution { font: 2rem Georgia, serif; }
+
+.defeat-crest {
+    height: min(19svh, 42cqw);
+    mask-image: linear-gradient(#000 92%, transparent);
+}
+
+.defeat-title {
+    width: min(80%, 23rem);
+    margin: clamp(0.35rem, 2svh, 1.25rem) auto 0;
+    font-size: clamp(2.5rem, 10cqw, 4.8rem);
+}
+
+.defeat-title img { display: block; width: 100%; height: auto; filter: saturate(0.82) brightness(0.86); }
+
+.defeat-divider {
+    --art: var(--results-art);
+    --crop-x: 105;
+    --crop-y: 334;
+    --crop-width: 650;
+    --crop-height: 46;
+    width: 70%;
+    margin-block: 0.35rem 0.75rem;
+}
+
+#defeat-timeout { margin: 0 0 0.6rem; color: var(--red-bright); }
+
+.defeat-answer {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-content: center;
+    gap: 0.3rem;
+    width: 85%;
+    min-height: clamp(5.5rem, 24cqw, 8rem);
+    padding: 1rem 9%;
+    background: #08050599;
+}
+
+.defeat-answer-label {
+    margin: 0;
+    color: #d9cabb;
+    font: clamp(0.72rem, 3cqw, 1rem) / 1.25 Georgia, serif;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.defeat-solution {
+    margin: 0;
+    font: clamp(1.35rem, 6.4cqw, 2.45rem) / 1.18 Georgia, serif;
+    overflow-wrap: anywhere;
+}
+
+.defeat-flourish {
+    flex: none;
+    margin-top: auto;
+    mask-image: linear-gradient(transparent, #000 8%);
+}
 
 .result-screen { padding: 0 8% clamp(1.25rem, 4svh, 2.5rem); }
 
@@ -560,9 +624,22 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
     width: 100%;
 }
 
-#result-duration-row, #result-multiplier-row { --icon-y: 403; --mark-y: 426; }
+#result-duration-row::before {
+    justify-self: center;
+    width: 88%;
+    aspect-ratio: 1;
+    border: 1px solid #7b3930;
+    border-radius: 50%;
+    background: linear-gradient(#bb6050, #bb6050) 50% 35% / 1px 27% no-repeat,
+                linear-gradient(#bb6050, #bb6050) 65% 50% / 26% 1px no-repeat,
+                var(--paper) center / cover;
+    box-shadow: inset 0 0 0 3px #0d0908, inset 0 0 0 4px #532922;
+}
+
+#result-duration-row::after { content: none; }
+#result-multiplier-row { --icon-y: 403; --mark-y: 426; }
 #result-correct-row { --icon-y: 550; --mark-y: 577; }
-#result-streak-row { --icon-y: 697; --mark-y: 727; }
+.result-streak-row { --icon-y: 697; --mark-y: 727; }
 
 .results-list dt {
     grid-area: label;
@@ -630,7 +707,7 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
     }
 }
 
-.result-restart.inscribed {
+.ornate-action.inscribed {
     isolation: isolate;
     width: 85%;
     min-height: clamp(3rem, 16cqw, 5.25rem);
@@ -644,7 +721,13 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
     text-transform: uppercase;
 }
 
-.result-restart::before {
+.defeat-screen .ornate-action.inscribed {
+    width: 79%;
+    margin: 0.95rem auto;
+    letter-spacing: 0.09em;
+}
+
+.ornate-action::before {
     --art: var(--results-art);
     --crop-x: 114;
     --crop-y: 1269;
@@ -673,7 +756,8 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
 }
 
 @media (max-height: 34rem) and (orientation: landscape) {
-    .game[data-screen="home"], .game[data-screen="results"] { width: min(100%, 23rem); }
+    .game[data-screen="home"], .game[data-screen="defeat"],
+    .game[data-screen="results"] { width: min(100%, 23rem); }
     .menu-crest { height: 6rem; }
     .menu-button.inscribed { min-height: 3.7rem; font-size: 1.65rem; }
 }
@@ -681,7 +765,8 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
 @media (forced-colors: active) {
     .reference-art { background: none; }
     .game-title span, .results-title span { color: CanvasText; }
-    .menu-button.inscribed, .result-restart.inscribed, .score-frame { border: 1px solid ButtonText; }
+    .menu-button.inscribed, .ornate-action.inscribed, .defeat-answer,
+    .score-frame { border: 1px solid ButtonText; }
 }
 
 @media (max-height: 30rem) {
