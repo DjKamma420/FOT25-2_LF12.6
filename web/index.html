@@ -150,7 +150,9 @@
         </section>
 
         <section id="defeat" class="screen defeat-screen" aria-labelledby="defeat-title" hidden>
-            <h2 id="defeat-title" class="screen-title defeat-title" tabindex="-1">Du bist gestorben</h2>
+            <h2 id="defeat-title" class="screen-title defeat-title" tabindex="-1">
+                <img src="assets/defeat-title.webp" alt="Du bist gestorben" width="768" height="512">
+            </h2>
             <div class="ornament" aria-hidden="true"><span>✦</span></div>
             <p id="defeat-timeout" class="notice" hidden>Zeit abgelaufen.</p>
             <p class="notice">Die richtige Lösung</p>
@@ -162,9 +164,13 @@
             <h2 id="results-title" class="screen-title results-title reference-art" tabindex="-1"><span>Deine Ergebnisse</span></h2>
             <p id="result-mode" class="notice"></p>
             <dl class="results-list">
-                <div><dt>Punkte</dt><dd id="result-points">0</dd></div>
-                <div><dt>Richtige Antworten</dt><dd id="result-correct"><span id="result-correct-count">0</span> / <span id="result-answered-count">0</span></dd></div>
-                <div><dt>Längste Serie</dt><dd id="result-streak">0</dd></div>
+                <div id="result-duration-row" hidden><dt>Dauer</dt><dd id="result-duration"></dd></div>
+                <div id="result-multiplier-row" hidden><dt>Max. Multiplikator</dt><dd id="result-multiplier"></dd></div>
+                <div id="result-correct-row" hidden>
+                    <dt>Richtige Antworten</dt>
+                    <dd><span id="result-correct-count">0</span> / <span id="result-answered-count">0</span></dd>
+                </div>
+                <div id="result-streak-row"><dt>Längste Serie</dt><dd id="result-streak">0</dd></div>
             </dl>
             <div class="score-frame">
                 <span>Dein Gesamtergebnis</span>

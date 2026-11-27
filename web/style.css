@@ -500,7 +500,12 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
 .defeat-screen,
 .result-screen { text-align: center; }
 .defeat-screen { display: grid; align-content: center; min-height: 100svh; }
-.defeat-title { font-size: clamp(3.35rem, 14cqw, 6.1rem); }
+.defeat-title img {
+    display: block;
+    width: min(62cqw, 22rem);
+    height: auto;
+    margin-inline: auto;
+}
 .defeat-solution { font: 2rem Georgia, serif; }
 
 .result-screen { padding: 0 8% clamp(1.25rem, 4svh, 2.5rem); }
@@ -528,7 +533,7 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
     padding-block: 0.25rem;
 }
 
-.results-list div + div { border-top: 1px solid #6d3b3266; }
+.results-list div:not([hidden]) ~ div { border-top: 1px solid #6d3b3266; }
 
 .results-list div::before,
 .results-list div::after {
@@ -555,9 +560,9 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
     width: 100%;
 }
 
-.results-list div:nth-child(1) { --icon-y: 403; --mark-y: 426; }
-.results-list div:nth-child(2) { --icon-y: 550; --mark-y: 577; }
-.results-list div:nth-child(3) { --icon-y: 697; --mark-y: 727; }
+#result-duration-row, #result-multiplier-row { --icon-y: 403; --mark-y: 426; }
+#result-correct-row { --icon-y: 550; --mark-y: 577; }
+#result-streak-row { --icon-y: 697; --mark-y: 727; }
 
 .results-list dt {
     grid-area: label;

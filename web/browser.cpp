@@ -111,7 +111,7 @@ int decimalPlaces = 1;
 bool clockRunning = false;
 double taskStart = 0.0;
 double roundStart = 0.0;
-bool roundFinished = false;
+std::optional<std::int64_t> roundDuration;
 std::vector<RunRecord> temporaryRuns;
 
 val element(const char* id) {
@@ -199,16 +199,17 @@ void rankRuns(std::vector<RunRecord>& runs) {
 }
 
 void finishRound(double finishedAt) {
-    if (roundFinished) {
+    if (roundDuration) {
         return;
     }
-    roundFinished = true;
+
+    const auto duration = static_cast<std::int64_t>(std::max(0.0, finishedAt - roundStart) / 1000.0);
+    roundDuration = duration;
     const auto& stats = session->stats();
     if (!session->isEndless() || stats.answered == 0) {
         return;
     }
 
-    const auto duration = static_cast<std::int64_t>(std::max(0.0, finishedAt - roundStart) / 1000.0);
     const auto timestamp = val::global("Date").call<double>("now");
     std::random_device random;
     const auto key = "rechentrainer.run.endless." + std::to_string(static_cast<std::int64_t>(timestamp)) + "."
@@ -387,18 +388,25 @@ void showQuestion() {
     focusWithoutScroll(answer);
 }
 
-void showResults() {
+void showResults(double finishedAt) {
     clockRunning = false;
-    finishRound(emscripten_get_now());
+    finishRound(finishedAt);
     const auto& stats = session->stats();
-    const std::string modeLabel = session->isEndless() ? "Endlos · " : "Üben · ";
-    const std::string points = formatPoints(stats.score);
+    const bool endless = session->isEndless();
+    const std::string modeLabel = endless ? "Endlos · " : "Üben · ";
     setText("result-mode", modeLabel + "Bis " + formatPoints(session->currentNumberLimit()));
-    setText("result-points", points);
-    setText("result-correct-count", formatPoints(stats.correct));
-    setText("result-answered-count", formatPoints(stats.answered));
+    setHidden("result-duration-row", endless);
+    setHidden("result-correct-row", endless);
+    setHidden("result-multiplier-row", !endless);
+    if (endless) {
+        setText("result-multiplier", "×" + formatFactor(stats.highestMultiplier));
+    } else {
+        setText("result-duration", formatDuration(*roundDuration));
+        setText("result-correct-count", formatPoints(stats.correct));
+        setText("result-answered-count", formatPoints(stats.answered));
+    }
     setText("result-streak", formatPoints(stats.bestStreak));
-    setText("result-score", points);
+    setText("result-score", formatPoints(stats.score));
     showScreen("results");
 }
 
@@ -462,7 +470,7 @@ void startRound(bool endless) {
     setText("practice-title", endless ? "Endlosrunde" : "Übungsrunde");
     showScreen("practice");
     roundStart = emscripten_get_now();
-    roundFinished = false;
+    roundDuration.reset();
     showQuestion();
 }
 
@@ -538,7 +546,7 @@ void handleEnd(val) {
         showDefeat(now);
         return;
     }
-    showResults();
+    showResults(now);
 }
 
 void bindGroup(const char* selector, const char* event, const char* handler) {
