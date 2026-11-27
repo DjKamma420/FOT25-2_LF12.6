@@ -2,18 +2,19 @@
 
 **[Webapp öffnen](https://djkamma420.github.io/FOT25-2_LF12.6/)**
 
-Schulprojekt der Klasse FOT25-2. Wir entwickeln ein Lernprogramm, mit dem Grundschulkinder selbstständig Plus- und Minusaufgaben üben können.
+Schulprojekt der Klasse FOT25-2. Wir entwickeln ein Lernprogramm, mit dem Grundschulkinder selbstständig die vier Grundrechenarten üben können.
 
 ## Team
 
 Marcel, Andreas, Mika und Anton
 
-## Geplante Funktionen
+## Spielablauf
 
-- Zufällige Aufgaben in den Zahlenräumen bis 10, bis 100 und bis 1000
-- Direkte Rückmeldung zur eingegebenen Antwort
-- Weitere Aufgaben, bis die Übung beendet wird
-- Als Bonus ein Rekord für richtige Antworten in Folge, jeweils pro Zahlenraum und Rechenart
+- Unter **Einstellungen** lassen sich Plus, Minus, Mal, Geteilt, beide Mischungen oder alle Rechenarten auswählen.
+- Beim Spielen stehen die Zahlenräume bis 10, bis 100 und bis 1000 zur Wahl. Geteilt-Aufgaben haben höchstens eine Nachkommastelle.
+- **Üben** läuft nach einer falschen Antwort weiter. **Endlos** endet beim ersten Fehler und stellt als jede zehnte Aufgabe eine Killer-Frage mit drei bis fünf Zahlen.
+- Im Endlosmodus mit **Alles** kommt Mal ab Serie 8 und Geteilt ab Serie 15 dazu. Einzelne Rechenarten können direkt geübt werden.
+- Punkte berücksichtigen Antwortzeit, Aufgabentyp und richtige Antworten in Folge. Punkt- und Serienrekorde werden je Modus, Zahlenraum und Rechenart lokal gespeichert.
 
 ## Arbeitspakete
 
@@ -28,4 +29,4 @@ Marcel, Andreas, Mika und Anton
 
 ## Umsetzung
 
-Die Rechenlogik der Webapp wird in C++ geschrieben. Für den Browser ist ein WebAssembly-Build mit Emscripten und die Bereitstellung über GitHub Pages geplant.
+Die Rechenlogik ist in C++ geschrieben. GitHub Actions kompiliert sie mit Emscripten zu WebAssembly und veröffentlicht die Webapp auf GitHub Pages. Die veröffentlichte App lässt sich über ein unterstütztes Browsermenü installieren und ist nach dem ersten vollständigen Laden offline spielbar.

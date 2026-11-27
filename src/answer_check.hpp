@@ -3,6 +3,7 @@
 
 #include "task.hpp"
 
+#include <string>
 #include <string_view>
 
 enum class AnswerStatus {
@@ -12,5 +13,6 @@ enum class AnswerStatus {
 };
 
 AnswerStatus checkAnswer(const Task& task, std::string_view input);
+std::string formatAnswer(int answerTenths);
 
 #endif

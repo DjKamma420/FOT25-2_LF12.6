@@ -2,28 +2,35 @@
 #define MATH_TRAINER_PRACTICE_SESSION_H
 
 #include "answer_check.hpp"
+#include "score.hpp"
 
 #include <optional>
 #include <random>
 
 class PracticeSession {
 public:
-    explicit PracticeSession(NumberRange range);
+    PracticeSession(NumberRange range, RoundMode mode, OperationSet operations);
 
-    NumberRange range() const;
-    Operation operation() const;
+    int questionNumber() const;
+    TaskKind currentKind() const;
     const Task& currentTask() const;
+    const RunStats& stats() const;
+    bool isDefeated() const;
 
-    bool changeOperation(Operation operation);
-    std::optional<AnswerStatus> submit(std::string_view input);
+    std::optional<AnswerStatus> submit(std::string_view input, double seconds);
     bool nextTask();
 
 private:
+    Task makeTask();
+
     NumberRange range_;
-    Operation operation_ = Operation::Add;
+    RoundMode mode_;
+    OperationSet operations_;
+    int questionNumber_ = 1;
+    RunStats stats_;
     std::mt19937 random_{std::random_device{}()};
     Task task_;
-    bool answered_ = false;
+    std::optional<AnswerStatus> lastAnswer_;
 };
 
 #endif

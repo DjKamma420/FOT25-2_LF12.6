@@ -5,7 +5,9 @@
 
 enum class Operation {
     Add,
-    Subtract
+    Subtract,
+    Multiply,
+    Divide
 };
 
 enum class NumberRange {
@@ -16,7 +18,8 @@ enum class NumberRange {
 
 struct Task {
     std::string expression;
-    int answer;
+    int answerTenths;
+    bool allowsDecimal = false;
 };
 
 #endif

@@ -36,7 +36,9 @@ jobs:
 
           mkdir -p _site
           em++ -std=c++17 web/browser.cpp src/*.cpp -lembind -o _site/rechentrainer.js
-          cp web/index.html web/style.css _site/
+          cp web/index.html web/style.css web/pwa.js web/manifest.webmanifest _site/
+          cp -R web/assets _site/
+          sed "s/BUILD_REVISION/$GITHUB_SHA/" web/service-worker.js > _site/service-worker.js
           printf 'artifact_name=github-pages-%s\n' "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-pages-artifact@v4

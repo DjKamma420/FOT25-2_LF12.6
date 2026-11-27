@@ -15,3 +15,33 @@ TaskKind selectTaskKind(int questionNumber) {
     }
     return TaskKind::Regular;
 }
+
+Operation selectOperation(OperationSet operations, RoundMode mode, int streak, std::mt19937& random) {
+    int firstOperation = 0;
+    int lastOperation = 3;
+    switch (operations) {
+        case OperationSet::Addition: return Operation::Add;
+        case OperationSet::Subtraction: return Operation::Subtract;
+        case OperationSet::Multiplication: return Operation::Multiply;
+        case OperationSet::Division: return Operation::Divide;
+        case OperationSet::AddSubtract:
+            lastOperation = 1;
+            break;
+        case OperationSet::MultiplyDivide:
+            firstOperation = 2;
+            break;
+        case OperationSet::All:
+            if (mode == RoundMode::Endless) {
+                if (streak == 8) {
+                    return Operation::Multiply;
+                }
+                if (streak == 15) {
+                    return Operation::Divide;
+                }
+                lastOperation = streak >= 15 ? 3 : streak >= 8 ? 2 : 1;
+            }
+            break;
+    }
+    std::uniform_int_distribution<int> distribution(firstOperation, lastOperation);
+    return static_cast<Operation>(distribution(random));
+}
