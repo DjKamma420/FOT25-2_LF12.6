@@ -11,7 +11,9 @@ struct RunStats {
     int streak = 0;
     int bestStreak = 0;
     int killerWinsInStreak = 0;
+    int killerWins = 0;
     std::int64_t score = 0;
+    std::int64_t highestMultiplier = 0;
 };
 
 double timeMultiplier(double seconds);

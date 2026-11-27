@@ -22,10 +22,12 @@ std::int64_t recordCorrectAnswer(RunStats& stats, TaskKind kind, double seconds)
     ++stats.correct;
     ++stats.streak;
     stats.bestStreak = std::max(stats.bestStreak, stats.streak);
+    stats.highestMultiplier = std::max(stats.highestMultiplier, multiplier);
 
     const bool isKiller = kind == TaskKind::Killer;
     if (isKiller) {
         ++stats.killerWinsInStreak;
+        ++stats.killerWins;
     }
     // Base points are 100 for normal tasks and 200 for killer tasks.
     const auto points = multiplier * (isKiller ? 2 : 1);

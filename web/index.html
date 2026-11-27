@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
     <meta name="theme-color" content="#0a0809">
     <title>Rechenlernprogramm</title>
     <link rel="icon" href="assets/icon-192.png" type="image/png">
@@ -15,6 +15,7 @@
 <body>
     <main id="game" class="game" data-screen="home" data-killer="false">
         <section id="home" class="screen menu-screen" aria-labelledby="home-title">
+            <button id="info-button" class="inscribed info-button" type="button" value="info" data-nav aria-label="Spielinformationen" disabled>i</button>
             <h1 id="home-title" class="game-title" tabindex="-1">Rechenlernprogramm</h1>
             <div class="ornament" aria-hidden="true"><span>✦</span></div>
             <fieldset id="home-actions" class="menu-actions" aria-label="Hauptmenü" disabled>
@@ -63,17 +64,44 @@
             <p id="install-help" class="notice">Zum Installieren im Browsermenü „App installieren“ oder „Zum Home-Bildschirm“ wählen.</p>
         </section>
 
-        <section id="records" class="screen choice-screen result-screen" aria-labelledby="records-title" hidden>
+        <section id="info" class="screen reading-screen" aria-labelledby="info-title" hidden>
+            <h2 id="info-title" class="screen-title" tabindex="-1">Spielinfo</h2>
+            <div class="ornament" aria-hidden="true"><span>✦</span></div>
+            <h3>Team</h3>
+            <ul class="team-list">
+                <li>Mika Christians</li>
+                <li>Marcel Enns</li>
+                <li>Lars Anton Roßbach</li>
+                <li>Andreas Pizelkin</li>
+            </ul>
+            <h3>Endlos</h3>
+            <p>Du startest mit Plus und Minus bis 10. Ab Aufgabe 11 rechnest du bis 100, ab Aufgabe 100 bis 1.000. Mal kommt nach 20 richtigen Antworten dazu, Geteilt nach 50. Mit längerer Serie werden die Aufgaben schwerer.</p>
+            <p>Jede zehnte Aufgabe ist eine Killer-Frage mit 60 Sekunden Zeit. Eine falsche Antwort oder das Zeitlimit beendet den Lauf.</p>
+            <h3>Punkte und Multiplikator</h3>
+            <p>Normale Aufgaben zählen 100 Grundpunkte, Killer-Fragen 200. Die Anzeige multipliziert den Aufgabenfaktor (×1 oder ×1,50), den Serienfaktor und den Zeitfaktor. Dein Punktgewinn ergibt sich aus den Grundpunkten mal dem angezeigten Multiplikator.</p>
+            <p>Der Serienfaktor beginnt bei ×1 und steigt alle fünf richtigen Antworten um 0,25 bis ×2. Jede gelöste Killer-Frage gibt zusätzlich 0,10 auf den Serienfaktor. Der Zeitfaktor sinkt gleichmäßig von ×1,60 beim Start einer Aufgabe auf ×0 nach 10 Sekunden. Eine richtige Antwort zählt auch dann für die Serie.</p>
+            <h3>Highscore</h3>
+            <p>Die fünf punktbesten Endlos-Läufe stehen im Highscore. Bei gleicher Punktzahl entscheidet die längere Serie. Die Laufzeit zählt vom Start bis zum Ende, inklusive der Pausen zwischen Aufgaben. Der höchste Multiplikator stammt aus einer richtig beantworteten Aufgabe. Deine Läufe bleiben in diesem Browser.</p>
+            <button class="text-button back-link" type="button" value="home" data-nav>Zum Hauptmenü</button>
+        </section>
+
+        <section id="records" class="screen reading-screen" aria-labelledby="records-title" hidden>
             <h2 id="records-title" class="screen-title" tabindex="-1">Highscore</h2>
-            <p class="notice">Beste Endlosrunde auf diesem Gerät</p>
             <div class="ornament" aria-hidden="true"><span>♕</span></div>
-            <div class="score-frame">
-                <span>Punkte</span>
-                <strong id="record-score">0</strong>
-            </div>
-            <dl class="results-list">
-                <div><dt>Richtige in Folge</dt><dd id="record-streak">0</dd></div>
-            </dl>
+            <p class="notice records-caption">Top 5 deiner Endlos-Läufe in diesem Browser</p>
+            <p id="records-empty" class="notice records-caption">Hier erscheinen deine abgeschlossenen Endlos-Läufe.</p>
+            <ol id="records-list" class="leaderboard" aria-label="Top 5 Endlos-Läufe" role="list"></ol>
+            <template id="record-template">
+                <li class="record-card">
+                    <div class="record-heading"><span data-rank></span><strong data-score></strong><span>Punkte</span></div>
+                    <dl class="record-details">
+                        <div><dt>Serie</dt><dd data-streak></dd></div>
+                        <div><dt>Laufzeit</dt><dd data-duration></dd></div>
+                        <div><dt>Max. Multiplikator</dt><dd data-multiplier></dd></div>
+                        <div><dt>Killer gelöst</dt><dd data-killers></dd></div>
+                    </dl>
+                </li>
+            </template>
             <button class="text-button back-link" type="button" value="home" data-nav>Zum Hauptmenü</button>
         </section>
 
@@ -88,21 +116,23 @@
                 </div>
                 <div class="hud-progress">
                     <span id="question-label" class="hud-label">Aufgabe 1</span>
-                    <progress id="progress-track" value="1" max="10" aria-label="Fortschritt bis zur Killer-Frage"></progress>
-                    <span id="progress-count" class="hud-detail">1 / 10</span>
                     <span id="range-label" class="hud-detail">Bis 100</span>
+                    <div id="progress-panel" class="progress-panel">
+                        <progress id="progress-track" value="1" max="10" aria-label="Fortschritt bis zur Killer-Frage"></progress>
+                        <span id="progress-count" class="hud-detail">1 / 10</span>
+                    </div>
+                    <div id="timer-panel" class="timer">
+                        <span id="timer-label">Zeit</span><span id="timer">0,0 s</span>
+                    </div>
                 </div>
             </div>
-            <div id="timer-panel" class="timer" aria-label="Antwortzeit">
-                <span id="timer-label">Zeit</span><span id="timer">0,0 s</span>
-            </div>
             <div class="challenge">
-                <h3 id="killer-title" class="killer-title" hidden>Killer<br>Frage</h3>
+                <h3 id="killer-title" class="killer-title" hidden>Killer-Frage</h3>
                 <p id="question" class="question" aria-live="polite"></p>
                 <form id="answer-form" class="answer-form">
                     <label class="visually-hidden" for="answer">Deine Antwort</label>
                     <input id="answer" class="inscribed answer-field" name="answer" type="text" inputmode="numeric"
-                           autocomplete="off" aria-describedby="question decimal-hint feedback">
+                           autocomplete="off" enterkeyhint="go" aria-describedby="question decimal-hint feedback">
                     <p id="decimal-hint" class="notice" hidden></p>
                     <p id="feedback" class="feedback" role="status"></p>
                     <button id="check-button" class="inscribed primary" type="submit">Prüfen</button>

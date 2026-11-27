@@ -1,25 +1,33 @@
+<img src="web/assets/icon-192.png" width="72" align="right" alt="">
+
 # Rechentrainer in C++
 
-**[Webapp öffnen](https://djkamma420.github.io/FOT25-2_LF12.6/)**
+Ein Rechenspiel der Klasse FOT25-2, mit dem Grundschulkinder die vier Grundrechenarten selbstständig üben können. Im Modus **Endlos** steigt die Schwierigkeit mit deiner Serie.
 
-Schulprojekt der Klasse FOT25-2. Wir entwickeln ein Lernprogramm, mit dem Grundschulkinder selbstständig die vier Grundrechenarten üben können.
+**[Rechentrainer im Browser öffnen](https://djkamma420.github.io/FOT25-2_LF12.6/)**
 
-## Team
+## Hauptmenü
 
-Marcel, Andreas, Mika und Anton
+| Auswahl | Funktion |
+| --- | --- |
+| **Endlos** | Starte im Zahlenraum bis 10 und spiele, bis du einen Fehler machst oder bei einer Killer-Frage die Zeit abläuft. |
+| **Üben** | Wähle den Zahlenraum bis 10, 100 oder 1.000 und kombiniere die Rechenarten frei. Für Geteilt sind bis zu drei Nachkommastellen einstellbar. Nach einem Fehler geht die Übung weiter. |
+| **Highscore** | Zeigt deine fünf besten abgeschlossenen Endlos-Läufe mit Punkten, Serie, Dauer, höchstem erzieltem Multiplikator und gelösten Killer-Fragen. Bei Punktgleichstand entscheidet die längere Serie. Die Daten bleiben im Browser. |
+| **i** | Öffnet die Spielregeln, die Erklärung zur Punktewertung und die Teamübersicht. |
 
-## Spielablauf
+## So läuft Endlos
 
-- **Endlos** startet direkt mit Plus und Minus im Zahlenraum bis 10. Von Aufgabe 11 bis 99 geht der Zahlenraum bis 100. Ab Aufgabe 100 geht er bis 1.000.
-- Mal kommt ab Serie 20 dazu, Geteilt ab Serie 50. Danach ist Geteilt bei normalen Aufgaben halb so wahrscheinlich wie jede andere Rechenart.
-- Geteilt beginnt mit ganzen Ergebnissen. Ab Serie 100 haben die Ergebnisse eine Nachkommastelle, ab 200 zwei und ab 300 drei.
-- Die Aufgaben werden länger, sobald die Stellenzahl ihrer Hauptrechenart ihr Maximum erreicht hat. Ab Serie 300 enthalten normale Aufgaben 14 Zahlen. Killer-Fragen haben bis zu 17 Zahlen.
-- Jede zehnte Endlos-Aufgabe ist eine Killer-Frage mit 60 Sekunden Zeit. Ein Fehler oder das Zeitlimit beendet die Runde.
-- Unter **Üben** lassen sich der Zahlenraum und beliebige Kombinationen aus Plus, Minus, Mal und Geteilt einstellen. Für Division sind bis zu 3 Nachkommastellen wählbar. Die Übung geht nach Fehlern weiter.
-- Die App zeigt den gemeinsamen Multiplikator aus Aufgabentyp, Serie und Zeit. Der Zeitfaktor startet bei ×1,60 und fällt linear auf null bei 10 Sekunden. Eine richtige Antwort zählt weiterhin für die Serie.
-- Der **Highscore** speichert die höchste Punktzahl aus Endlos zusammen mit der Serie aus genau dieser Runde. Die Daten liegen im Browser.
+| Aufgabe | Zahlenraum |
+| --- | ---: |
+| 1–10 | Bis 10 |
+| 11–99 | Bis 100 |
+| Ab 100 | Bis 1.000 |
 
-### Stellenzahl in Endlos
+Du beginnst mit Plus und Minus. Mal kommt nach 20 richtigen Antworten in Folge dazu, Geteilt nach 50. Danach ist Geteilt bei normalen Aufgaben halb so wahrscheinlich wie jede andere Rechenart. Divisionen ergeben zunächst ganze Zahlen. Nach 100, 200 und 300 richtigen Antworten in Folge haben ihre Ergebnisse jeweils eine, zwei und drei Nachkommastellen.
+
+Jede zehnte Aufgabe ist eine **Killer-Frage** mit 60 Sekunden Zeit. Sobald die Zahlen einer Rechenart ihre maximale Stellenzahl erreicht haben, werden ihre Aufgaben länger. Ab Serie 300 enthalten normale Aufgaben 14 Zahlen und Killer-Fragen bis zu 17.
+
+### Stellenzahl für Mal und Geteilt
 
 | Serie für Mal | Stellen je Faktor | Serie für Geteilt | Stellen von Dividend und Teiler |
 | --- | --- | --- | --- |
@@ -27,6 +35,19 @@ Marcel, Andreas, Mika und Anton
 | 50 | 2 × 1 | 100 | 3 ÷ 1 |
 | 100 | 2 × 2 | 125 | 3 ÷ 2 |
 |  |  | 150 | 3 ÷ 3 |
+
+### Punkte
+
+Normale Aufgaben bringen 100 Grundpunkte, Killer-Fragen 200. Der angezeigte Multiplikator verbindet den Aufgabenfaktor (×1 oder ×1,50), den Serienfaktor und den Zeitfaktor. Die Grundpunkte werden mit diesem Wert multipliziert.
+
+Der Serienfaktor startet bei ×1 und steigt alle fünf richtigen Antworten um 0,25 bis ×2. Jede gelöste Killer-Frage bringt zusätzlich 0,10. Der Zeitfaktor beginnt bei ×1,60 und sinkt innerhalb von zehn Sekunden gleichmäßig auf ×0. Für die erste richtige Antwort nach fünf Sekunden gibt es zum Beispiel **80 Punkte**. Auch bei null Punkten wächst die Serie weiter, wenn die Antwort richtig ist.
+
+## Team
+
+- Mika Christians
+- Marcel Enns
+- Lars Anton Roßbach
+- Andreas Pizelkin
 
 ## Arbeitspakete
 

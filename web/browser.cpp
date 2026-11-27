@@ -9,9 +9,12 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <random>
 #include <sstream>
 #include <string>
 #include <system_error>
+#include <utility>
+#include <vector>
 
 EM_JS(double, readStoredNumber, (const char* key), {
     try {
@@ -30,24 +33,44 @@ EM_JS(void, writeStoredNumber, (const char* key, double value), {
     }
 });
 
-EM_JS(void, readEndlessRecord, (double* score, int* streak), {
+EM_JS(emscripten::EM_VAL, readEndlessRuns, (), {
+    const runs = [];
+    const legacyKey = "rechentrainer.record.endless";
+    const isCount = value => Number.isSafeInteger(value) && value >= 0;
     try {
-        const record = JSON.parse(localStorage.getItem("rechentrainer.record.endless"));
-        if (record && Number.isSafeInteger(record.score) && record.score >= 0
-            && Number.isInteger(record.streak) && record.streak >= 0 && record.streak <= 2147483647) {
-            HEAPF64[score >> 3] = record.score;
-            HEAP32[streak >> 2] = record.streak;
+        for (const key of Object.keys(localStorage)) {
+            if (key !== legacyKey && !key.startsWith("rechentrainer.run.endless.")) continue;
+            try {
+                const run = JSON.parse(localStorage.getItem(key));
+                if (!run || !isCount(run.score) || !isCount(run.streak) || run.streak > 2147483647) continue;
+                if (key !== legacyKey && (!isCount(run.duration) || !isCount(run.highestMultiplier)
+                    || !isCount(run.killerWins) || run.killerWins > run.streak)) continue;
+                runs.push({ ...run, key });
+            } catch {
+                // Skip a damaged entry and keep reading the other runs.
+            }
         }
     } catch {
-        // An unavailable or invalid record leaves the initialized values at zero.
+        // The browser can block storage.
+    }
+    return Emval.toHandle(runs);
+});
+
+EM_JS(bool, writeEndlessRun, (const char* key, double score, int streak, double duration,
+    double highestMultiplier, int killerWins), {
+    try {
+        localStorage.setItem(UTF8ToString(key), JSON.stringify({ score, streak, duration, highestMultiplier, killerWins }));
+        return true;
+    } catch {
+        return false;
     }
 });
 
-EM_JS(void, writeEndlessRecord, (double score, int streak), {
+EM_JS(void, removeEndlessRun, (const char* key), {
     try {
-        localStorage.setItem("rechentrainer.record.endless", JSON.stringify({ score, streak }));
+        localStorage.removeItem(UTF8ToString(key));
     } catch {
-        // The current round remains playable when browser storage is blocked.
+        // The leaderboard still displays at most five entries.
     }
 });
 
@@ -56,7 +79,7 @@ namespace {
 using emscripten::val;
 
 constexpr std::array ranges{NumberRange::UpTo10, NumberRange::UpTo100, NumberRange::UpTo1000};
-constexpr std::array screens{"home", "setup", "records", "practice", "defeat", "results"};
+constexpr std::array screens{"home", "setup", "info", "records", "practice", "defeat", "results"};
 constexpr std::array operationChoices{
     OperationMask{1}, OperationMask{2}, OperationMask{4}, OperationMask{8}
 };
@@ -65,14 +88,31 @@ constexpr std::array legacyOperationChoices{
     additionAndSubtraction, OperationMask{12}, allOperations
 };
 
+constexpr std::size_t leaderboardSize = 5;
+constexpr auto legacyRecordKey = "rechentrainer.record.endless";
+
+struct RunDetails {
+    std::int64_t duration;
+    std::int64_t highestMultiplier;
+    int killerWins;
+};
+
+struct RunRecord {
+    std::string key;
+    std::int64_t score;
+    int streak;
+    std::optional<RunDetails> details;
+};
+
 std::optional<PracticeSession> session;
 NumberRange range = NumberRange::UpTo100;
 OperationMask practiceOperations = additionAndSubtraction;
 int decimalPlaces = 1;
 bool clockRunning = false;
 double taskStart = 0.0;
-double recordScore = 0.0;
-int recordStreak = 0;
+double roundStart = 0.0;
+bool roundFinished = false;
+std::vector<RunRecord> temporaryRuns;
 
 val element(const char* id) {
     return val::global("document").call<val>("getElementById", std::string(id));
@@ -88,6 +128,12 @@ void setHidden(const char* id, bool hidden) {
 
 void setAttribute(const val& target, const char* name, const std::string& value) {
     target.call<void>("setAttribute", std::string(name), value);
+}
+
+void focusWithoutScroll(const val& target) {
+    auto options = val::object();
+    options.set("preventScroll", true);
+    target.call<void>("focus", options);
 }
 
 std::optional<int> parseInt(const std::string& value) {
@@ -113,33 +159,97 @@ std::string formatFactor(std::int64_t hundredths) {
     return std::to_string(hundredths / 100) + "," + (fraction < 10 ? "0" : "") + std::to_string(fraction);
 }
 
-void refreshRecord() {
-    double storedScore = 0.0;
-    int storedStreak = 0;
-    readEndlessRecord(&storedScore, &storedStreak);
-    if (storedScore > recordScore || (storedScore == recordScore && storedStreak > recordStreak)) {
-        recordScore = storedScore;
-        recordStreak = storedStreak;
-    }
+std::string twoDigits(std::int64_t value) {
+    return (value < 10 ? "0" : "") + std::to_string(value);
 }
 
-void saveRecord() {
-    if (!session->isEndless()) {
+std::string formatDuration(std::int64_t seconds) {
+    const auto minutes = seconds / 60;
+    if (minutes >= 60) {
+        return std::to_string(minutes / 60) + ":" + twoDigits(minutes % 60) + ":" + twoDigits(seconds % 60);
+    }
+    return std::to_string(minutes) + ":" + twoDigits(seconds % 60);
+}
+
+std::vector<RunRecord> storedRuns() {
+    const auto entries = val::take_ownership(readEndlessRuns());
+    const auto count = entries["length"].as<unsigned>();
+    std::vector<RunRecord> runs;
+    runs.reserve(count);
+    for (unsigned index = 0; index < count; ++index) {
+        const auto entry = entries[index];
+        RunRecord run{entry["key"].as<std::string>(), static_cast<std::int64_t>(entry["score"].as<double>()),
+                      entry["streak"].as<int>(), std::nullopt};
+        if (run.key != legacyRecordKey) {
+            run.details = RunDetails{static_cast<std::int64_t>(entry["duration"].as<double>()),
+                                     static_cast<std::int64_t>(entry["highestMultiplier"].as<double>()),
+                                     entry["killerWins"].as<int>()};
+        }
+        runs.push_back(std::move(run));
+    }
+    return runs;
+}
+
+void rankRuns(std::vector<RunRecord>& runs) {
+    std::sort(runs.begin(), runs.end(), [](const RunRecord& left, const RunRecord& right) {
+        if (left.score != right.score) return left.score > right.score;
+        if (left.streak != right.streak) return left.streak > right.streak;
+        return left.key < right.key;
+    });
+}
+
+void finishRound(double finishedAt) {
+    if (roundFinished) {
         return;
     }
-    refreshRecord();
+    roundFinished = true;
     const auto& stats = session->stats();
-    if (stats.score > recordScore || (stats.score == recordScore && stats.bestStreak > recordStreak)) {
-        recordScore = static_cast<double>(stats.score);
-        recordStreak = stats.bestStreak;
-        writeEndlessRecord(recordScore, recordStreak);
+    if (!session->isEndless() || stats.answered == 0) {
+        return;
+    }
+
+    const auto duration = static_cast<std::int64_t>(std::max(0.0, finishedAt - roundStart) / 1000.0);
+    const auto timestamp = val::global("Date").call<double>("now");
+    std::random_device random;
+    const auto key = "rechentrainer.run.endless." + std::to_string(static_cast<std::int64_t>(timestamp)) + "."
+        + std::to_string(random()) + "." + std::to_string(random());
+    if (!writeEndlessRun(key.c_str(), stats.score, stats.bestStreak, duration, stats.highestMultiplier, stats.killerWins)) {
+        temporaryRuns.push_back({key, stats.score, stats.bestStreak, RunDetails{duration, stats.highestMultiplier, stats.killerWins}});
+        rankRuns(temporaryRuns);
+        if (temporaryRuns.size() > leaderboardSize) temporaryRuns.resize(leaderboardSize);
+        return;
+    }
+
+    // Each run has its own key, so browser tabs can save independently.
+    auto runs = storedRuns();
+    rankRuns(runs);
+    for (auto index = leaderboardSize; index < runs.size(); ++index) {
+        if (runs[index].key != legacyRecordKey) removeEndlessRun(runs[index].key.c_str());
     }
 }
 
-void renderRecord() {
-    refreshRecord();
-    setText("record-score", formatPoints(static_cast<std::int64_t>(recordScore)));
-    setText("record-streak", formatPoints(recordStreak));
+void renderRecords() {
+    auto runs = storedRuns();
+    runs.insert(runs.end(), temporaryRuns.begin(), temporaryRuns.end());
+    rankRuns(runs);
+    setHidden("records-empty", !runs.empty());
+    auto list = element("records-list");
+    list.set("textContent", std::string());
+    const auto card = element("record-template")["content"]["firstElementChild"];
+    for (std::size_t index = 0; index < std::min(leaderboardSize, runs.size()); ++index) {
+        const auto& run = runs[index];
+        auto row = card.call<val>("cloneNode", true);
+        const auto set = [&row](const char* selector, const std::string& value) {
+            row.call<val>("querySelector", std::string(selector)).set("textContent", value);
+        };
+        set("[data-rank]", "#" + std::to_string(index + 1));
+        set("[data-score]", formatPoints(run.score));
+        set("[data-streak]", formatPoints(run.streak));
+        set("[data-duration]", run.details ? formatDuration(run.details->duration) : "–");
+        set("[data-multiplier]", run.details ? "×" + formatFactor(run.details->highestMultiplier) : "–");
+        set("[data-killers]", run.details ? formatPoints(run.details->killerWins) : "–");
+        list.call<val>("appendChild", row);
+    }
 }
 
 void showScreen(const std::string& next) {
@@ -168,10 +278,6 @@ void updateSelection() {
     setHidden("operation-warning", practiceOperations != 0);
 }
 
-double elapsedSeconds() {
-    return (emscripten_get_now() - taskStart) / 1000.0;
-}
-
 void updateClock(double seconds, std::int64_t multiplier) {
     const bool killer = session->currentKind() == TaskKind::Killer;
     if (killer) {
@@ -184,8 +290,9 @@ void updateClock(double seconds, std::int64_t multiplier) {
     setText("live-multiplier", "×" + formatFactor(multiplier));
 }
 
-void showDefeat() {
+void showDefeat(double finishedAt) {
     clockRunning = false;
+    finishRound(session->hasTimedOut() ? taskStart + killerTimeLimit * 1000.0 : finishedAt);
     const auto& task = session->currentTask();
     setHidden("defeat-timeout", !session->hasTimedOut());
     setText("defeat-solution", task.expression + " = " + formatAnswer(task.answerUnits));
@@ -196,10 +303,11 @@ void tickClock(void*) {
     if (!clockRunning) {
         return;
     }
-    const double seconds = elapsedSeconds();
+    const double now = emscripten_get_now();
+    const double seconds = (now - taskStart) / 1000.0;
     updateClock(seconds, scoreMultiplierHundredths(session->stats(), session->currentKind(), seconds));
     if (session->expireIfNeeded(seconds)) {
-        showDefeat();
+        showDefeat(now);
     }
 }
 
@@ -252,8 +360,7 @@ void showQuestion() {
     const int phase = (number - 1) % 10 + 1;
     setAttribute(element("game"), "data-killer", killer ? "true" : "false");
     setHidden("killer-title", !killer);
-    setHidden("progress-track", !endless);
-    setHidden("progress-count", !endless);
+    setHidden("progress-panel", !endless);
     element("progress-track").set("value", phase);
     setText("progress-count", std::to_string(phase) + " / 10");
     setText("question-label", "Aufgabe " + formatPoints(number));
@@ -277,11 +384,12 @@ void showQuestion() {
     taskStart = emscripten_get_now();
     clockRunning = true;
     updateClock(0.0, scoreMultiplierHundredths(session->stats(), session->currentKind(), 0.0));
-    answer.call<void>("focus");
+    focusWithoutScroll(answer);
 }
 
 void showResults() {
     clockRunning = false;
+    finishRound(emscripten_get_now());
     const auto& stats = session->stats();
     const std::string modeLabel = session->isEndless() ? "Endlos · " : "Üben · ";
     setText("result-mode", modeLabel + "Bis " + formatPoints(session->currentNumberLimit()));
@@ -294,7 +402,7 @@ void showResults() {
 void handleNavigation(val event) {
     const auto target = event["currentTarget"]["value"].as<std::string>();
     if (target == "records") {
-        renderRecord();
+        renderRecords();
     }
     if (target == "home") {
         clockRunning = false;
@@ -350,6 +458,8 @@ void startRound(bool endless) {
     }
     setText("practice-title", endless ? "Endlosrunde" : "Übungsrunde");
     showScreen("practice");
+    roundStart = emscripten_get_now();
+    roundFinished = false;
     showQuestion();
 }
 
@@ -368,7 +478,8 @@ void handleAnswerSubmit(val event) {
     }
 
     auto input = element("answer");
-    const double seconds = elapsedSeconds();
+    const double now = emscripten_get_now();
+    const double seconds = (now - taskStart) / 1000.0;
     const auto previousScore = session->stats().score;
     const auto multiplier = scoreMultiplierHundredths(session->stats(), session->currentKind(), seconds);
     const auto answer = session->submit(input["value"].as<std::string>(), seconds);
@@ -383,7 +494,7 @@ void handleAnswerSubmit(val event) {
             : "Gib eine ganze Zahl ein.";
         setFeedback(message, "invalid");
         setAttribute(input, "aria-invalid", "true");
-        input.call<void>("focus");
+        focusWithoutScroll(input);
         input.call<void>("select");
         return;
     }
@@ -391,9 +502,8 @@ void handleAnswerSubmit(val event) {
     clockRunning = false;
     updateClock(seconds, *answer == AnswerStatus::Correct ? multiplier : 0);
     updateHud();
-    saveRecord();
     if (session->isDefeated()) {
-        showDefeat();
+        showDefeat(now);
         return;
     }
 
@@ -407,7 +517,7 @@ void handleAnswerSubmit(val event) {
     }
     setHidden("check-button", true);
     setHidden("next-button", false);
-    element("next-button").call<void>("focus");
+    focusWithoutScroll(element("next-button"));
 }
 
 void handleNext(val) {
@@ -420,8 +530,9 @@ void handleEnd(val) {
     if (!session) {
         return;
     }
-    if (clockRunning && session->expireIfNeeded(elapsedSeconds())) {
-        showDefeat();
+    const double now = emscripten_get_now();
+    if (clockRunning && session->expireIfNeeded((now - taskStart) / 1000.0)) {
+        showDefeat(now);
         return;
     }
     showResults();
@@ -476,6 +587,7 @@ int main() {
     element("answer-form").set("onsubmit", val::module_property("handleAnswerSubmit"));
     element("next-button").set("onclick", val::module_property("handleNext"));
     element("home-actions").set("disabled", false);
+    element("info-button").set("disabled", false);
     setHidden("loading-status", true);
     updateSelection();
     emscripten_set_interval(tickClock, 125.0, nullptr);
