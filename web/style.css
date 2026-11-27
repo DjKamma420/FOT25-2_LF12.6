@@ -1,0 +1,35 @@
+body {
+    margin: 0;
+    padding: 1rem;
+    background: #f8f7f4;
+    color: #18243b;
+    font-family: system-ui, sans-serif;
+}
+
+main {
+    max-width: 32rem;
+    margin: 3rem auto;
+    padding: 1.5rem;
+    border: 1px solid #d9dee7;
+    border-radius: 0.75rem;
+    background: white;
+}
+
+h1 {
+    margin-top: 0;
+}
+
+button {
+    padding: 0.65rem 1rem;
+    border: 0;
+    border-radius: 0.4rem;
+    background: #244dda;
+    color: white;
+    font: inherit;
+    cursor: pointer;
+}
+
+button:disabled {
+    background: #647086;
+    cursor: default;
+}
