@@ -1,0 +1,48 @@
+name: Rechentrainer veröffentlichen
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'web/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/configure-pages@v5
+
+      - name: C++ für den Browser kompilieren
+        run: |
+          git clone --depth 1 --branch 4.0.21 https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
+          "$RUNNER_TEMP/emsdk/emsdk" install 4.0.21
+          "$RUNNER_TEMP/emsdk/emsdk" activate 4.0.21
+          source "$RUNNER_TEMP/emsdk/emsdk_env.sh"
+
+          mkdir -p _site
+          em++ -std=c++17 web/browser.cpp src/*.cpp -lembind -o _site/rechentrainer.js
+          cp web/index.html web/style.css _site/
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Auf GitHub Pages veröffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v4

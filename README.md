@@ -1,5 +1,7 @@
 # Rechentrainer in C++
 
+**[Webapp öffnen](https://djkamma420.github.io/FOT25-2_LF12.6/)** · Aktueller Stand ist das Web-Gerüst mit C++-Testbutton.
+
 Schulprojekt der Klasse FOT25-2. Wir entwickeln ein Lernprogramm, mit dem Grundschulkinder selbstständig Plus- und Minusaufgaben üben können.
 
 ## Team
@@ -34,7 +36,7 @@ Voraussetzungen sind das aktivierte Emscripten SDK (`em++`) und Python 3. Die Be
 
 ```bash
 web_build=$(mktemp -d)
-em++ -std=c++17 web/browser.cpp -lembind -o "$web_build/rechentrainer.js"
+em++ -std=c++17 web/browser.cpp src/*.cpp -lembind -o "$web_build/rechentrainer.js"
 cp web/index.html web/style.css "$web_build/"
 python3 -m http.server 8000 --bind 127.0.0.1 --directory "$web_build"
 ```
