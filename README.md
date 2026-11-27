@@ -29,16 +29,3 @@ Marcel, Andreas, Mika und Anton
 ## Umsetzung
 
 Die Rechenlogik der Webapp wird in C++ geschrieben. Für den Browser ist ein WebAssembly-Build mit Emscripten und die Bereitstellung über GitHub Pages geplant.
-
-## Web-Gerüst lokal starten
-
-Voraussetzungen sind das aktivierte Emscripten SDK (`em++`) und Python 3. Die Befehle laufen in einer Bash im Hauptordner des Repositorys.
-
-```bash
-web_build=$(mktemp -d)
-em++ -std=c++17 web/browser.cpp src/*.cpp -lembind -o "$web_build/rechentrainer.js"
-cp web/index.html web/style.css "$web_build/"
-python3 -m http.server 8000 --bind 127.0.0.1 --directory "$web_build"
-```
-
-Im Browser [localhost:8000](http://localhost:8000) öffnen und auf **C++ testen** klicken. Es erscheint **C++ läuft im Browser.**
