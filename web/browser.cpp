@@ -392,10 +392,13 @@ void showResults() {
     finishRound(emscripten_get_now());
     const auto& stats = session->stats();
     const std::string modeLabel = session->isEndless() ? "Endlos · " : "Üben · ";
+    const std::string points = formatPoints(stats.score);
     setText("result-mode", modeLabel + "Bis " + formatPoints(session->currentNumberLimit()));
-    setText("result-correct", formatPoints(stats.correct) + " / " + formatPoints(stats.answered));
+    setText("result-points", points);
+    setText("result-correct-count", formatPoints(stats.correct));
+    setText("result-answered-count", formatPoints(stats.answered));
     setText("result-streak", formatPoints(stats.bestStreak));
-    setText("result-score", formatPoints(stats.score));
+    setText("result-score", points);
     showScreen("results");
 }
 

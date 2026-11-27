@@ -8,6 +8,9 @@ const files = [
     "pwa.js",
     "manifest.webmanifest",
     "assets/frame.webp",
+    "assets/menu-art.webp",
+    "assets/results-art.webp",
+    "assets/worn-paper.webp",
     "assets/pirata-one.woff2",
     "assets/icon-192.png",
     "assets/icon-512.png"

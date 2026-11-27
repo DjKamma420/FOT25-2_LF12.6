@@ -16,23 +16,23 @@
     <main id="game" class="game" data-screen="home" data-killer="false">
         <section id="home" class="screen menu-screen" aria-labelledby="home-title">
             <button id="info-button" class="inscribed info-button" type="button" value="info" data-nav aria-label="Spielinformationen" disabled>i</button>
-            <h1 id="home-title" class="game-title" tabindex="-1">Rechenlernprogramm</h1>
-            <div class="ornament" aria-hidden="true"><span>✦</span></div>
+            <div class="menu-crest reference-art" aria-hidden="true"></div>
+            <h1 id="home-title" class="game-title reference-art" tabindex="-1"><span>Rechenlernprogramm</span></h1>
             <fieldset id="home-actions" class="menu-actions" aria-label="Hauptmenü" disabled>
                 <button class="inscribed menu-button" type="button" value="endless" data-start>
-                    <span aria-hidden="true">⚔︎</span><span>Endlos</span><span aria-hidden="true">⚔︎</span>
+                    <span class="menu-icon reference-art" aria-hidden="true"></span><span>Endlos</span>
                 </button>
                 <button class="inscribed menu-button" type="button" value="records" data-nav>
-                    <span aria-hidden="true">♕</span><span>Highscore</span><span aria-hidden="true">♕</span>
+                    <span class="menu-icon reference-art" aria-hidden="true"></span><span>Highscore</span>
                 </button>
                 <button class="inscribed menu-button" type="button" value="setup" data-nav>
-                    <span aria-hidden="true">✎</span><span>Üben</span><span aria-hidden="true">✎</span>
+                    <span class="menu-icon reference-art" aria-hidden="true"></span><span>Üben</span>
                 </button>
             </fieldset>
             <p class="motto">Lerne. Übe. Überlebe.</p>
-            <span class="menu-skull" aria-hidden="true">💀</span>
             <p id="loading-status" class="notice" role="status">Das Spiel wird geladen …</p>
             <noscript><p class="notice">Zum Spielen muss JavaScript im Browser aktiviert sein.</p></noscript>
+            <div class="menu-flourish reference-art" aria-hidden="true"></div>
         </section>
 
         <section id="setup" class="screen choice-screen" aria-labelledby="setup-title" hidden>
@@ -159,18 +159,18 @@
         </section>
 
         <section id="results" class="screen result-screen" aria-labelledby="results-title" hidden>
-            <h2 id="results-title" class="screen-title" tabindex="-1">Deine Ergebnisse</h2>
+            <h2 id="results-title" class="screen-title results-title reference-art" tabindex="-1"><span>Deine Ergebnisse</span></h2>
             <p id="result-mode" class="notice"></p>
-            <div class="ornament" aria-hidden="true"><span>✦</span></div>
             <dl class="results-list">
-                <div><dt>Richtige Antworten</dt><dd id="result-correct">0 / 0</dd></div>
+                <div><dt>Punkte</dt><dd id="result-points">0</dd></div>
+                <div><dt>Richtige Antworten</dt><dd id="result-correct"><span id="result-correct-count">0</span> / <span id="result-answered-count">0</span></dd></div>
                 <div><dt>Längste Serie</dt><dd id="result-streak">0</dd></div>
             </dl>
             <div class="score-frame">
-                <span>Deine Gesamtpunkte</span>
+                <span>Dein Gesamtergebnis</span>
                 <strong id="result-score">0</strong>
             </div>
-            <button class="inscribed primary" type="button" value="restart" data-start>Nochmal spielen</button>
+            <button class="inscribed primary result-restart" type="button" value="restart" data-start>Nochmal spielen</button>
             <button class="text-button back-link" type="button" value="home" data-nav>Zum Hauptmenü</button>
         </section>
     </main>
