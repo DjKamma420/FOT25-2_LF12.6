@@ -2,6 +2,10 @@
 
 Schulprojekt der Klasse FOT25-2. Wir entwickeln ein Lernprogramm, mit dem Grundschulkinder selbstständig Plus- und Minusaufgaben üben können.
 
+## Team
+
+Marcel, Andreas, Mika und Anton
+
 ## Geplante Funktionen
 
 - Zufällige Aufgaben in den Zahlenräumen bis 10, bis 100 und bis 1000
