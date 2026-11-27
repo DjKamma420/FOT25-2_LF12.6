@@ -1,6 +1,6 @@
 # Rechentrainer in C++
 
-**[Webapp öffnen](https://djkamma420.github.io/FOT25-2_LF12.6/)** · Aktueller Stand ist das Web-Gerüst mit C++-Testbutton.
+**[Webapp öffnen](https://djkamma420.github.io/FOT25-2_LF12.6/)**
 
 Schulprojekt der Klasse FOT25-2. Wir entwickeln ein Lernprogramm, mit dem Grundschulkinder selbstständig Plus- und Minusaufgaben üben können.
 
