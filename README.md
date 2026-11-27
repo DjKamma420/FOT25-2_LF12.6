@@ -26,4 +26,4 @@ Marcel, Andreas, Mika und Anton
 
 ## Umsetzung
 
-Die Webapp und die Konsolenversion verwenden dieselbe Rechenlogik in C++. Für die Webapp ist ein WebAssembly-Build mit Emscripten und die Bereitstellung über GitHub Pages geplant. Die Konsolenversion ist für OnlineGDB vorgesehen.
+Die Rechenlogik der Webapp wird in C++ geschrieben. Für den Browser ist ein WebAssembly-Build mit Emscripten und die Bereitstellung über GitHub Pages geplant.
