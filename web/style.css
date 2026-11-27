@@ -625,15 +625,8 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
 }
 
 #result-duration-row::before {
-    justify-self: center;
-    width: 88%;
     aspect-ratio: 1;
-    border: 1px solid #7b3930;
-    border-radius: 50%;
-    background: linear-gradient(#bb6050, #bb6050) 50% 35% / 1px 27% no-repeat,
-                linear-gradient(#bb6050, #bb6050) 65% 50% / 26% 1px no-repeat,
-                var(--paper) center / cover;
-    box-shadow: inset 0 0 0 3px #0d0908, inset 0 0 0 4px #532922;
+    background: url("assets/duration-clock.webp") center / contain no-repeat;
 }
 
 #result-duration-row::after { content: none; }
