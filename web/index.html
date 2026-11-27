@@ -3,15 +3,53 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#151215">
     <title>Rechentrainer</title>
     <link rel="stylesheet" href="style.css">
     <script src="rechentrainer.js" defer></script>
 </head>
 <body>
-    <main>
+    <main class="game">
         <h1>Rechentrainer</h1>
-        <button id="test-button" type="button" disabled>C++ testen</button>
-        <p id="status" role="status">C++ wird geladen …</p>
+
+        <section id="menu-screen" class="panel" aria-labelledby="menu-title">
+            <h2 id="menu-title">Zahlenraum wählen</h2>
+            <div class="range-options">
+                <button id="range-10" class="range-button" type="button" value="10" disabled>
+                    <strong>Bis 10</strong>
+                    <span>4 + 5</span>
+                </button>
+                <button id="range-100" class="range-button" type="button" value="100" disabled>
+                    <strong>Bis 100</strong>
+                    <span>34 + 15</span>
+                </button>
+                <button id="range-1000" class="range-button" type="button" value="1000" disabled>
+                    <strong>Bis 1000</strong>
+                    <span>340 + 150</span>
+                </button>
+            </div>
+            <p id="loading-status" role="status">Die App wird geladen …</p>
+        </section>
+
+        <section id="practice-screen" class="panel" aria-labelledby="practice-title" hidden>
+            <div class="practice-header">
+                <h2 id="practice-title"></h2>
+                <button id="back-button" class="back-button" type="button">Zum Hauptmenü</button>
+            </div>
+            <div class="operation-options" role="group" aria-label="Rechenart">
+                <button id="add-button" type="button" value="add" aria-pressed="true">Plus</button>
+                <button id="subtract-button" type="button" value="subtract" aria-pressed="false">Minus</button>
+            </div>
+            <p id="question" class="question" aria-live="polite"></p>
+            <form id="answer-form">
+                <label for="answer">Deine Antwort</label>
+                <input id="answer" name="answer" type="text" inputmode="numeric" autocomplete="off"
+                       aria-describedby="question feedback">
+                <p id="feedback" role="status"></p>
+                <button id="check-button" class="primary-button" type="submit">Prüfen</button>
+                <button id="next-button" class="primary-button" type="button" hidden>Weiter</button>
+            </form>
+        </section>
     </main>
 </body>
 </html>

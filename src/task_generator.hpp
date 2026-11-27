@@ -1,7 +1,7 @@
 #ifndef MATH_TRAINER_TASK_GENERATOR_H
 #define MATH_TRAINER_TASK_GENERATOR_H
 
-#include "task.h"
+#include "task.hpp"
 
 #include <random>
 
