@@ -10,7 +10,7 @@ emscripten::val element(const char* id) {
         .call<emscripten::val>("getElementById", std::string(id));
 }
 
-bool beimTestklick(int, const EmscriptenMouseEvent*, void*) {
+bool handleTestClick(int, const EmscriptenMouseEvent*, void*) {
     element("status").set("textContent", std::string("C++ läuft im Browser."));
     return true;
 }
@@ -18,10 +18,10 @@ bool beimTestklick(int, const EmscriptenMouseEvent*, void*) {
 }  // namespace
 
 int main() {
-    const auto ergebnis = emscripten_set_click_callback(
-        "#test-button", nullptr, false, beimTestklick);
+    const auto registration = emscripten_set_click_callback(
+        "#test-button", nullptr, false, handleTestClick);
 
-    if (ergebnis != EMSCRIPTEN_RESULT_SUCCESS) {
+    if (registration != EMSCRIPTEN_RESULT_SUCCESS) {
         element("status").set("textContent", std::string("Der Testbutton konnte nicht gestartet werden."));
         return 1;
     }
