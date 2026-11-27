@@ -19,11 +19,18 @@
             <h1 id="home-title" class="game-title" tabindex="-1">Rechenlernprogramm</h1>
             <div class="ornament" aria-hidden="true"><span>✦</span></div>
             <fieldset id="home-actions" class="menu-actions" aria-label="Hauptmenü" disabled>
-                <button class="inscribed menu-button" type="button" value="endless" data-start><span aria-hidden="true">⚔︎</span>Endlos</button>
-                <button class="inscribed menu-button" type="button" value="records" data-nav><span aria-hidden="true">♕</span>Highscore</button>
-                <button class="inscribed menu-button" type="button" value="setup" data-nav><span aria-hidden="true">⚙︎</span>Üben</button>
+                <button class="inscribed menu-button" type="button" value="endless" data-start>
+                    <span aria-hidden="true">⚔︎</span><span>Endlos</span><span aria-hidden="true">⚔︎</span>
+                </button>
+                <button class="inscribed menu-button" type="button" value="records" data-nav>
+                    <span aria-hidden="true">♕</span><span>Highscore</span><span aria-hidden="true">♕</span>
+                </button>
+                <button class="inscribed menu-button" type="button" value="setup" data-nav>
+                    <span aria-hidden="true">✎</span><span>Üben</span><span aria-hidden="true">✎</span>
+                </button>
             </fieldset>
             <p class="motto">Lerne. Übe. Überlebe.</p>
+            <span class="menu-skull" aria-hidden="true">💀</span>
             <p id="loading-status" class="notice" role="status">Das Spiel wird geladen …</p>
             <noscript><p class="notice">Zum Spielen muss JavaScript im Browser aktiviert sein.</p></noscript>
         </section>
@@ -64,7 +71,7 @@
             <p id="install-help" class="notice">Zum Installieren im Browsermenü „App installieren“ oder „Zum Home-Bildschirm“ wählen.</p>
         </section>
 
-        <section id="info" class="screen reading-screen" aria-labelledby="info-title" hidden>
+        <section id="info" class="screen reading-screen info-screen" aria-labelledby="info-title" hidden>
             <h2 id="info-title" class="screen-title" tabindex="-1">Spielinfo</h2>
             <div class="ornament" aria-hidden="true"><span>✦</span></div>
             <h3>Team</h3>

@@ -40,6 +40,18 @@ body {
     box-shadow: 0 0 4rem #000;
 }
 
+.game[data-screen="info"] { background-image: none; }
+
+.game[data-screen="info"]::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0 0 auto;
+    height: 30svh;
+    background: url("assets/frame.webp") center top / 100% 100svh no-repeat;
+    mask-image: linear-gradient(#000 65%, transparent);
+    content: "";
+}
+
 .game[data-killer="true"]::before,
 .game[data-screen="defeat"]::before {
     position: absolute;
@@ -138,13 +150,14 @@ button { cursor: pointer; }
 
 .info-button {
     position: absolute;
-    inset-block-start: clamp(2rem, 7svh, 4rem);
-    inset-inline-end: clamp(1.65rem, 8cqw, 3.4rem);
+    inset-block-start: 8.8%;
+    inset-inline-end: 15.5%;
     width: 2.75rem;
     padding: 0;
     border-radius: 50%;
     color: var(--red-bright);
-    font: bold 1.15rem Georgia, serif;
+    font: bold 1.35rem Georgia, serif;
+    transform: translate(50%, -50%);
 }
 
 :focus-visible {
@@ -165,21 +178,26 @@ button:disabled { cursor: default; opacity: 0.56; }
 
 .menu-button {
     display: grid;
-    grid-template-columns: 1em 1fr;
+    grid-template-columns: 1em max-content 1em;
     align-items: center;
-    column-gap: 0.4em;
+    justify-content: center;
+    column-gap: 0.48em;
     min-height: clamp(3.7rem, 9.5svh, 6.5rem);
-    padding-inline: 13%;
+    padding-inline: 0.5rem;
     font-family: Georgia, serif;
     font-size: clamp(1.45rem, 6.3cqw, 3.1rem);
     line-height: 1.06;
-    text-align: left;
+    text-align: center;
 }
 
-.menu-button span {
+.menu-button [aria-hidden="true"] {
     color: var(--red);
     font-size: 0.95em;
-    text-align: center;
+    font-variant-emoji: text;
+}
+
+.menu-button[value="endless"] [aria-hidden="true"] {
+    filter: grayscale(1) sepia(1) saturate(3.5) hue-rotate(315deg) brightness(0.78);
 }
 
 .motto {
@@ -188,6 +206,17 @@ button:disabled { cursor: default; opacity: 0.56; }
     font: 1rem Georgia, serif;
     letter-spacing: 0.16em;
     text-transform: uppercase;
+}
+
+.menu-skull {
+    position: absolute;
+    inset: auto 0 10%;
+    width: max-content;
+    margin-inline: auto;
+    font-size: clamp(2rem, 9cqw, 3.45rem);
+    line-height: 1;
+    filter: grayscale(0.75) sepia(0.4) brightness(0.86) drop-shadow(0 0 0.55rem #832b25);
+    pointer-events: none;
 }
 
 .notice { color: var(--muted); font-size: 0.95rem; }
@@ -331,6 +360,7 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
 .feedback[data-state="invalid"] { color: var(--red-bright); }
 
 .reading-screen { padding-top: clamp(3.45rem, 9svh, 6rem); }
+.info-screen { padding-top: max(4.5rem, 18svh); }
 .reading-screen h3 { margin: 1.15rem 0 0.35rem; color: var(--gold); font: 1.3rem Georgia, serif; }
 .reading-screen p { margin: 0.45rem 0; }
 .team-list { margin: 0.35rem 0; padding-inline-start: 1.2rem; }
@@ -419,6 +449,11 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
 @media (max-width: 26rem) {
     .range-options button { padding-inline: 0.22rem; font-size: 0.92rem; }
     .settings-grid label { font-size: 0.9rem; }
+}
+
+@media (max-height: 34rem) {
+    .menu-screen { padding-block: 4rem 2.4rem; }
+    .menu-skull { position: static; margin: 0.8rem auto 0; }
 }
 
 @media (max-height: 30rem) {
