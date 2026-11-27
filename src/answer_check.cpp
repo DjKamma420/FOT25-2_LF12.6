@@ -1,7 +1,6 @@
 #include "answer_check.hpp"
 
 #include <charconv>
-#include <cstdint>
 #include <system_error>
 
 AnswerStatus checkAnswer(const Task& task, std::string_view input) {
@@ -25,10 +24,17 @@ AnswerStatus checkAnswer(const Task& task, std::string_view input) {
     const auto decimal = input.find_first_of(".,");
     if (decimal != std::string_view::npos) {
         const auto digits = input.substr(decimal + 1);
-        if (!task.allowsDecimal || digits.size() != 1 || digits.front() < '0' || digits.front() > '9') {
+        if (digits.empty() || digits.size() > static_cast<std::size_t>(task.decimalPlaces)) {
             return AnswerStatus::Invalid;
         }
-        fraction = digits.front() - '0';
+        int place = answerScale / 10;
+        for (const char digit : digits) {
+            if (digit < '0' || digit > '9') {
+                return AnswerStatus::Invalid;
+            }
+            fraction += (digit - '0') * place;
+            place /= 10;
+        }
         input = input.substr(0, decimal);
     }
 
@@ -39,16 +45,18 @@ AnswerStatus checkAnswer(const Task& task, std::string_view input) {
         return AnswerStatus::Invalid;
     }
 
-    const std::int64_t magnitude = static_cast<std::int64_t>(whole) * 10 + fraction;
+    const std::int64_t magnitude = static_cast<std::int64_t>(whole) * answerScale + fraction;
     const auto value = negative ? -magnitude : magnitude;
-    return value == task.answerTenths ? AnswerStatus::Correct : AnswerStatus::Incorrect;
+    return value == task.answerUnits ? AnswerStatus::Correct : AnswerStatus::Incorrect;
 }
 
-std::string formatAnswer(int answerTenths) {
-    const int fraction = answerTenths % 10;
-    std::string answer = std::to_string(answerTenths / 10);
+std::string formatAnswer(std::int64_t answerUnits) {
+    const auto fraction = answerUnits % answerScale;
+    std::string answer = std::to_string(answerUnits / answerScale);
     if (fraction != 0) {
-        answer += "," + std::to_string(fraction);
+        auto digits = std::to_string(fraction + answerScale).substr(1);
+        digits.erase(digits.find_last_not_of('0') + 1);
+        answer += "," + digits;
     }
     return answer;
 }

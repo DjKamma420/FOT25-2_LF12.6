@@ -4,15 +4,21 @@
 
 #include <utility>
 
-PracticeSession::PracticeSession(NumberRange range, RoundMode mode, OperationSet operations)
-    : range_(range), mode_(mode), operations_(operations), task_(makeTask()) {}
+PracticeSession::PracticeSession() : task_(makeTask()) {}
+
+PracticeSession::PracticeSession(NumberRange range, OperationMask operations, int decimalPlaces)
+    : endless_(false), range_(range), operations_(operations), decimalPlaces_(decimalPlaces), task_(makeTask()) {}
 
 int PracticeSession::questionNumber() const {
     return questionNumber_;
 }
 
+int PracticeSession::currentNumberLimit() const {
+    return endless_ ? endlessNumberLimit(questionNumber_ - 1) : static_cast<int>(range_);
+}
+
 TaskKind PracticeSession::currentKind() const {
-    return mode_ == RoundMode::Endless ? selectTaskKind(questionNumber_) : TaskKind::Regular;
+    return endless_ ? selectTaskKind(questionNumber_) : TaskKind::Regular;
 }
 
 const Task& PracticeSession::currentTask() const {
@@ -23,13 +29,34 @@ const RunStats& PracticeSession::stats() const {
     return stats_;
 }
 
+bool PracticeSession::isEndless() const {
+    return endless_;
+}
+
 bool PracticeSession::isDefeated() const {
-    return mode_ == RoundMode::Endless && lastAnswer_ == AnswerStatus::Incorrect;
+    return endless_ && lastAnswer_ == AnswerStatus::Incorrect;
+}
+
+bool PracticeSession::hasTimedOut() const {
+    return timedOut_;
+}
+
+bool PracticeSession::expireIfNeeded(double seconds) {
+    if (lastAnswer_ || currentKind() != TaskKind::Killer || seconds < killerTimeLimit) {
+        return false;
+    }
+    recordIncorrectAnswer(stats_);
+    lastAnswer_ = AnswerStatus::Incorrect;
+    timedOut_ = true;
+    return true;
 }
 
 std::optional<AnswerStatus> PracticeSession::submit(std::string_view input, double seconds) {
     if (lastAnswer_) {
         return std::nullopt;
+    }
+    if (expireIfNeeded(seconds)) {
+        return AnswerStatus::Incorrect;
     }
 
     const auto status = checkAnswer(task_, input);
@@ -62,9 +89,18 @@ bool PracticeSession::nextTask() {
 }
 
 Task PracticeSession::makeTask() {
+    const int limit = currentNumberLimit();
     if (currentKind() == TaskKind::Killer) {
-        return generateKillerTask(range_, random_);
+        const int terms = endlessTermCount(Operation::Add, stats_.streak);
+        return generateKillerTask(limit, terms, random_);
     }
-    const auto operation = selectOperation(operations_, mode_, stats_.streak, random_);
-    return generateTask(operation, range_, random_);
+
+    if (!endless_) {
+        return generateTask(selectOperation(operations_, random_), limit, decimalPlaces_, random_);
+    }
+
+    const auto operation = selectEndlessOperation(stats_.streak, random_);
+    Task task = generateEndlessTask(operation, stats_.streak, random_);
+    extendTask(task, limit, endlessTermCount(operation, stats_.streak) - 2, random_);
+    return task;
 }

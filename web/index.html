@@ -18,9 +18,9 @@
             <h1 id="home-title" class="game-title" tabindex="-1">Rechenlernprogramm</h1>
             <div class="ornament" aria-hidden="true"><span>✦</span></div>
             <fieldset id="home-actions" class="menu-actions" aria-label="Hauptmenü" disabled>
-                <button class="inscribed menu-button" type="button" value="setup" data-nav><span aria-hidden="true">⚔︎</span>Spielen</button>
+                <button class="inscribed menu-button" type="button" value="endless" data-start><span aria-hidden="true">⚔︎</span>Endlos</button>
                 <button class="inscribed menu-button" type="button" value="records" data-nav><span aria-hidden="true">♕</span>Highscore</button>
-                <button class="inscribed menu-button" type="button" value="settings" data-nav><span aria-hidden="true">⚙︎</span>Einstellungen</button>
+                <button class="inscribed menu-button" type="button" value="setup" data-nav><span aria-hidden="true">⚙︎</span>Üben</button>
             </fieldset>
             <p class="motto">Lerne. Übe. Überlebe.</p>
             <p id="loading-status" class="notice" role="status">Das Spiel wird geladen …</p>
@@ -28,9 +28,8 @@
         </section>
 
         <section id="setup" class="screen choice-screen" aria-labelledby="setup-title" hidden>
-            <h2 id="setup-title" class="screen-title" tabindex="-1">Spielen</h2>
+            <h2 id="setup-title" class="screen-title" tabindex="-1">Üben</h2>
             <div class="ornament" aria-hidden="true"><span>✦</span></div>
-            <p class="current-choice">Rechenarten <strong id="setup-operations"></strong> <button class="text-button" type="button" value="settings" data-nav>Ändern</button></p>
             <fieldset class="choices">
                 <legend>Zahlenraum</legend>
                 <div class="option-grid range-options">
@@ -40,73 +39,41 @@
                 </div>
             </fieldset>
             <fieldset class="choices">
-                <legend>Modus</legend>
-                <div class="option-grid">
-                    <button id="mode-practice" class="inscribed" type="button" value="practice" data-mode aria-pressed="true">Üben</button>
-                    <button id="mode-endless" class="inscribed" type="button" value="endless" data-mode aria-pressed="false">Endlos</button>
-                </div>
-            </fieldset>
-            <p id="endless-note" class="notice" hidden>Ein Fehler beendet die Runde. Jede zehnte Aufgabe ist eine Killer-Frage mit einer Plus-/Minus-Kette.</p>
-            <p id="unlock-note" class="notice" hidden>Bei „Alles“ kommt Mal ab Serie 8 und Geteilt ab Serie 15 dazu.</p>
-            <button class="inscribed primary" type="button" data-start>Runde starten</button>
-            <button class="text-button back-link" type="button" value="home" data-nav>Zum Hauptmenü</button>
-        </section>
-
-        <section id="settings" class="screen choice-screen" aria-labelledby="settings-title" hidden>
-            <h2 id="settings-title" class="screen-title" tabindex="-1">Einstellungen</h2>
-            <fieldset class="choices">
                 <legend>Rechenarten</legend>
                 <div class="settings-grid">
-                    <label><input id="operations-0" type="radio" name="operations" value="0"> <span>Plus</span></label>
-                    <label><input id="operations-1" type="radio" name="operations" value="1"> <span>Minus</span></label>
-                    <label><input id="operations-2" type="radio" name="operations" value="2"> <span>Mal</span></label>
-                    <label><input id="operations-3" type="radio" name="operations" value="3"> <span>Geteilt</span></label>
-                    <label><input id="operations-4" type="radio" name="operations" value="4"> <span>Gemischt Plus/Minus</span></label>
-                    <label><input id="operations-5" type="radio" name="operations" value="5"> <span>Gemischt Mal/Geteilt</span></label>
-                    <label><input id="operations-6" type="radio" name="operations" value="6"> <span>Alles</span></label>
+                    <label><input id="operations-1" type="checkbox" name="operations" value="1" checked> <span>+ Plus</span></label>
+                    <label><input id="operations-2" type="checkbox" name="operations" value="2" checked> <span>− Minus</span></label>
+                    <label><input id="operations-4" type="checkbox" name="operations" value="4"> <span>× Mal</span></label>
+                    <label><input id="operations-8" type="checkbox" name="operations" value="8"> <span>÷ Geteilt</span></label>
                 </div>
+                <p id="operation-warning" class="notice" role="status" hidden>Wähle mindestens eine Rechenart.</p>
             </fieldset>
-            <fieldset class="choices secondary-settings">
-                <legend>Anzeige</legend>
-                <label><input id="hide-timer" type="checkbox" data-preference> <span>Timer ausblenden<br><small>Die Zeit zählt weiterhin für die Punkte.</small></span></label>
-                <label><input id="neutral-defeat" type="checkbox" data-preference> <span>„Runde beendet“ als Meldung anzeigen</span></label>
-            </fieldset>
-            <button id="install-button" class="inscribed" type="button" hidden>App installieren</button>
-            <p id="install-help" class="notice">Zum Installieren das Browsermenü öffnen und „App installieren“ oder „Zum Home-Bildschirm“ wählen.</p>
-            <button id="settings-back" class="text-button back-link" type="button">Zurück</button>
+            <label id="division-options" class="division-options" hidden>
+                Maximale Nachkommastellen bei Geteilt
+                <select id="division-places">
+                    <option value="0">0 · Nur ganze Zahlen</option>
+                    <option value="1" selected>1 Nachkommastelle</option>
+                    <option value="2">2 Nachkommastellen</option>
+                    <option value="3">3 Nachkommastellen</option>
+                </select>
+            </label>
+            <button id="start-practice" class="inscribed primary" type="button" value="practice" data-start>Übung starten</button>
+            <button class="text-button back-link" type="button" value="home" data-nav>Zum Hauptmenü</button>
+            <button id="install-button" class="text-button back-link" type="button" hidden>App installieren</button>
+            <p id="install-help" class="notice">Zum Installieren im Browsermenü „App installieren“ oder „Zum Home-Bildschirm“ wählen.</p>
         </section>
 
-        <section id="records" class="screen choice-screen" aria-labelledby="records-title" hidden>
+        <section id="records" class="screen choice-screen result-screen" aria-labelledby="records-title" hidden>
             <h2 id="records-title" class="screen-title" tabindex="-1">Highscore</h2>
+            <p class="notice">Beste Endlosrunde auf diesem Gerät</p>
             <div class="ornament" aria-hidden="true"><span>♕</span></div>
-            <div class="record-filters">
-                <label>Modus
-                    <select id="record-mode" data-record-filter>
-                        <option value="practice">Üben</option>
-                        <option value="endless">Endlos</option>
-                    </select>
-                </label>
-                <label>Rechenarten
-                    <select id="record-operations" data-record-filter>
-                        <option value="0">Plus</option>
-                        <option value="1">Minus</option>
-                        <option value="2">Mal</option>
-                        <option value="3">Geteilt</option>
-                        <option value="4">Gemischt Plus/Minus</option>
-                        <option value="5">Gemischt Mal/Geteilt</option>
-                        <option value="6">Alles</option>
-                    </select>
-                </label>
+            <div class="score-frame">
+                <span>Punkte</span>
+                <strong id="record-score">0</strong>
             </div>
-            <table class="record-table">
-                <thead><tr><th scope="col">Zahlenraum</th><th scope="col">Punkte</th><th scope="col">Serie</th></tr></thead>
-                <tbody>
-                    <tr><th scope="row">Bis 10</th><td id="record-score-10">0</td><td id="record-streak-10">0</td></tr>
-                    <tr><th scope="row">Bis 100</th><td id="record-score-100">0</td><td id="record-streak-100">0</td></tr>
-                    <tr><th scope="row">Bis 1000</th><td id="record-score-1000">0</td><td id="record-streak-1000">0</td></tr>
-                </tbody>
-            </table>
-            <p class="notice">Die Rekorde werden auf diesem Gerät gespeichert.</p>
+            <dl class="results-list">
+                <div><dt>Richtige in Folge</dt><dd id="record-streak">0</dd></div>
+            </dl>
             <button class="text-button back-link" type="button" value="home" data-nav>Zum Hauptmenü</button>
         </section>
 
@@ -116,7 +83,8 @@
                 <div>
                     <span class="hud-label">Punkte</span>
                     <strong id="live-score" class="hud-value">0</strong>
-                    <span class="hud-detail">Serie <span id="live-streak">0</span> · <span id="live-multiplier">×1,00</span></span>
+                    <span class="hud-detail">Serie <span id="live-streak">0</span></span>
+                    <span class="hud-detail">Multiplikator <span id="live-multiplier">×1,60</span></span>
                 </div>
                 <div class="hud-progress">
                     <span id="question-label" class="hud-label">Aufgabe 1</span>
@@ -125,8 +93,8 @@
                     <span id="range-label" class="hud-detail">Bis 100</span>
                 </div>
             </div>
-            <div id="timer-panel" class="timer" aria-label="Antwortzeit und Zeitfaktor">
-                <span id="timer">0,0 s</span><span id="time-factor">×1,60</span>
+            <div id="timer-panel" class="timer" aria-label="Antwortzeit">
+                <span id="timer-label">Zeit</span><span id="timer">0,0 s</span>
             </div>
             <div class="challenge">
                 <h3 id="killer-title" class="killer-title" hidden>Killer<br>Frage</h3>
@@ -135,7 +103,7 @@
                     <label class="visually-hidden" for="answer">Deine Antwort</label>
                     <input id="answer" class="inscribed answer-field" name="answer" type="text" inputmode="numeric"
                            autocomplete="off" aria-describedby="question decimal-hint feedback">
-                    <p id="decimal-hint" class="notice" hidden>Bei Bedarf eine Nachkommastelle eingeben.</p>
+                    <p id="decimal-hint" class="notice" hidden></p>
                     <p id="feedback" class="feedback" role="status"></p>
                     <button id="check-button" class="inscribed primary" type="submit">Prüfen</button>
                     <button id="next-button" class="inscribed primary" type="button" hidden>Weiter</button>
@@ -147,6 +115,7 @@
         <section id="defeat" class="screen defeat-screen" aria-labelledby="defeat-title" hidden>
             <h2 id="defeat-title" class="screen-title defeat-title" tabindex="-1">Du bist gestorben</h2>
             <div class="ornament" aria-hidden="true"><span>✦</span></div>
+            <p id="defeat-timeout" class="notice" hidden>Zeit abgelaufen.</p>
             <p class="notice">Die richtige Lösung</p>
             <p id="defeat-solution" class="defeat-solution"></p>
             <button class="inscribed primary" type="button" data-end>Zu den Ergebnissen</button>
@@ -164,7 +133,7 @@
                 <span>Deine Gesamtpunkte</span>
                 <strong id="result-score">0</strong>
             </div>
-            <button class="inscribed primary" type="button" data-start>Nochmal spielen</button>
+            <button class="inscribed primary" type="button" value="restart" data-start>Nochmal spielen</button>
             <button class="text-button back-link" type="button" value="home" data-nav>Zum Hauptmenü</button>
         </section>
     </main>

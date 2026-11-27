@@ -5,6 +5,7 @@
 #include <emscripten/eventloop.h>
 #include <emscripten/val.h>
 
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <cmath>
@@ -29,26 +30,49 @@ EM_JS(void, writeStoredNumber, (const char* key, double value), {
     }
 });
 
+EM_JS(void, readEndlessRecord, (double* score, int* streak), {
+    try {
+        const record = JSON.parse(localStorage.getItem("rechentrainer.record.endless"));
+        if (record && Number.isSafeInteger(record.score) && record.score >= 0
+            && Number.isInteger(record.streak) && record.streak >= 0 && record.streak <= 2147483647) {
+            HEAPF64[score >> 3] = record.score;
+            HEAP32[streak >> 2] = record.streak;
+        }
+    } catch {
+        // An unavailable or invalid record leaves the initialized values at zero.
+    }
+});
+
+EM_JS(void, writeEndlessRecord, (double score, int streak), {
+    try {
+        localStorage.setItem("rechentrainer.record.endless", JSON.stringify({ score, streak }));
+    } catch {
+        // The current round remains playable when browser storage is blocked.
+    }
+});
+
 namespace {
 
 using emscripten::val;
 
-constexpr std::array operationLabels{
-    "Plus", "Minus", "Mal", "Geteilt", "Gemischt Plus/Minus",
-    "Gemischt Mal/Geteilt", "Alles"
-};
 constexpr std::array ranges{NumberRange::UpTo10, NumberRange::UpTo100, NumberRange::UpTo1000};
-constexpr std::array screens{"home", "setup", "settings", "records", "practice", "defeat", "results"};
+constexpr std::array screens{"home", "setup", "records", "practice", "defeat", "results"};
+constexpr std::array operationChoices{
+    OperationMask{1}, OperationMask{2}, OperationMask{4}, OperationMask{8}
+};
+constexpr std::array legacyOperationChoices{
+    OperationMask{1}, OperationMask{2}, OperationMask{4}, OperationMask{8},
+    additionAndSubtraction, OperationMask{12}, allOperations
+};
 
 std::optional<PracticeSession> session;
 NumberRange range = NumberRange::UpTo100;
-RoundMode roundMode = RoundMode::Practice;
-OperationSet operations = OperationSet::AddSubtract;
-std::string settingsReturn = "home";
-bool timerHidden = false;
-bool neutralDefeat = false;
+OperationMask practiceOperations = additionAndSubtraction;
+int decimalPlaces = 1;
 bool clockRunning = false;
 double taskStart = 0.0;
+double recordScore = 0.0;
+int recordStreak = 0;
 
 val element(const char* id) {
     return val::global("document").call<val>("getElementById", std::string(id));
@@ -64,10 +88,6 @@ void setHidden(const char* id, bool hidden) {
 
 void setAttribute(const val& target, const char* name, const std::string& value) {
     target.call<void>("setAttribute", std::string(name), value);
-}
-
-std::string eventValue(const val& event) {
-    return event["currentTarget"]["value"].as<std::string>();
 }
 
 std::optional<int> parseInt(const std::string& value) {
@@ -88,50 +108,38 @@ std::string formatPoints(std::int64_t points) {
     return formatted;
 }
 
-std::string formatFactor(double factor) {
-    const auto hundredths = std::lround(factor * 100);
+std::string formatFactor(std::int64_t hundredths) {
     const auto fraction = hundredths % 100;
     return std::to_string(hundredths / 100) + "," + (fraction < 10 ? "0" : "") + std::to_string(fraction);
 }
 
-const char* operationLabel(OperationSet choice) {
-    return operationLabels[static_cast<int>(choice)];
-}
-
-std::string recordKey(NumberRange recordRange, RoundMode mode, OperationSet choice) {
-    return "rechentrainer.record." + std::to_string(static_cast<int>(recordRange))
-        + "." + std::to_string(static_cast<int>(mode))
-        + "." + std::to_string(static_cast<int>(choice));
-}
-
-void saveRecords() {
-    const auto& stats = session->stats();
-    const auto key = recordKey(range, roundMode, operations);
-    const auto scoreKey = key + ".score";
-    const auto streakKey = key + ".streak";
-    if (stats.score > readStoredNumber(scoreKey.c_str())) {
-        writeStoredNumber(scoreKey.c_str(), static_cast<double>(stats.score));
-    }
-    if (stats.bestStreak > readStoredNumber(streakKey.c_str())) {
-        writeStoredNumber(streakKey.c_str(), stats.bestStreak);
+void refreshRecord() {
+    double storedScore = 0.0;
+    int storedStreak = 0;
+    readEndlessRecord(&storedScore, &storedStreak);
+    if (storedScore > recordScore || (storedScore == recordScore && storedStreak > recordStreak)) {
+        recordScore = storedScore;
+        recordStreak = storedStreak;
     }
 }
 
-void renderRecords() {
-    const auto selectedMode = element("record-mode")["value"].as<std::string>() == "endless"
-        ? RoundMode::Endless : RoundMode::Practice;
-    const auto selectedOperations = parseInt(element("record-operations")["value"].as<std::string>());
-    if (!selectedOperations || *selectedOperations < 0 || *selectedOperations >= static_cast<int>(operationLabels.size())) {
+void saveRecord() {
+    if (!session->isEndless()) {
         return;
     }
-    for (const auto recordRange : ranges) {
-        const auto key = recordKey(recordRange, selectedMode, static_cast<OperationSet>(*selectedOperations));
-        const auto score = static_cast<std::int64_t>(readStoredNumber((key + ".score").c_str()));
-        const auto streak = static_cast<std::int64_t>(readStoredNumber((key + ".streak").c_str()));
-        const auto limit = std::to_string(static_cast<int>(recordRange));
-        setText(("record-score-" + limit).c_str(), formatPoints(score));
-        setText(("record-streak-" + limit).c_str(), std::to_string(streak));
+    refreshRecord();
+    const auto& stats = session->stats();
+    if (stats.score > recordScore || (stats.score == recordScore && stats.bestStreak > recordStreak)) {
+        recordScore = static_cast<double>(stats.score);
+        recordStreak = stats.bestStreak;
+        writeEndlessRecord(recordScore, recordStreak);
     }
+}
+
+void renderRecord() {
+    refreshRecord();
+    setText("record-score", formatPoints(static_cast<std::int64_t>(recordScore)));
+    setText("record-streak", formatPoints(recordStreak));
 }
 
 void showScreen(const std::string& next) {
@@ -146,40 +154,59 @@ void showScreen(const std::string& next) {
 }
 
 void updateSelection() {
-    const auto limit = std::to_string(static_cast<int>(range));
-    setText("setup-operations", operationLabel(operations));
     for (const auto candidate : ranges) {
         const auto id = "range-" + std::to_string(static_cast<int>(candidate));
         setAttribute(element(id.c_str()), "aria-pressed", candidate == range ? "true" : "false");
     }
-    const bool isEndless = roundMode == RoundMode::Endless;
-    setAttribute(element("mode-practice"), "aria-pressed", isEndless ? "false" : "true");
-    setAttribute(element("mode-endless"), "aria-pressed", isEndless ? "true" : "false");
-    setHidden("unlock-note", !isEndless || operations != OperationSet::All);
-    setHidden("endless-note", !isEndless);
-    setText("range-label", "Bis " + limit);
+    for (const auto choice : operationChoices) {
+        const auto id = "operations-" + std::to_string(choice);
+        element(id.c_str()).set("checked", (practiceOperations & choice) != 0);
+    }
+    setHidden("division-options", (practiceOperations & operationBit(Operation::Divide)) == 0);
+    element("division-places").set("value", std::to_string(decimalPlaces));
+    element("start-practice").set("disabled", practiceOperations == 0);
+    setHidden("operation-warning", practiceOperations != 0);
 }
 
-void updateClock(double seconds) {
-    if (timerHidden) {
-        return;
+double elapsedSeconds() {
+    return (emscripten_get_now() - taskStart) / 1000.0;
+}
+
+void updateClock(double seconds, std::int64_t multiplier) {
+    const bool killer = session->currentKind() == TaskKind::Killer;
+    if (killer) {
+        const auto left = std::ceil(std::max(0.0, killerTimeLimit - seconds));
+        setText("timer", std::to_string(static_cast<int>(left)) + " s");
+    } else {
+        const auto tenths = std::lround(seconds * 10);
+        setText("timer", std::to_string(tenths / 10) + "," + std::to_string(tenths % 10) + " s");
     }
-    const auto tenths = std::lround(seconds * 10);
-    setText("timer", std::to_string(tenths / 10) + "," + std::to_string(tenths % 10) + " s");
-    setText("time-factor", "×" + formatFactor(timeMultiplier(seconds)));
+    setText("live-multiplier", "×" + formatFactor(multiplier));
+}
+
+void showDefeat() {
+    clockRunning = false;
+    const auto& task = session->currentTask();
+    setHidden("defeat-timeout", !session->hasTimedOut());
+    setText("defeat-solution", task.expression + " = " + formatAnswer(task.answerUnits));
+    showScreen("defeat");
 }
 
 void tickClock(void*) {
-    if (clockRunning) {
-        updateClock((emscripten_get_now() - taskStart) / 1000.0);
+    if (!clockRunning) {
+        return;
+    }
+    const double seconds = elapsedSeconds();
+    updateClock(seconds, scoreMultiplierHundredths(session->stats(), session->currentKind(), seconds));
+    if (session->expireIfNeeded(seconds)) {
+        showDefeat();
     }
 }
 
 void updateHud() {
     const auto& stats = session->stats();
     setText("live-score", formatPoints(stats.score));
-    setText("live-multiplier", "×" + formatFactor(streakMultiplier(stats)));
-    setText("live-streak", std::to_string(stats.streak));
+    setText("live-streak", formatPoints(stats.streak));
 }
 
 void setFeedback(const std::string& message, const std::string& state) {
@@ -207,12 +234,20 @@ void renderExpression(const std::string& expression) {
         question.call<val>("appendChild", span);
         ++index;
     }
+    setAttribute(question, "data-long", index > 7 ? "true" : "false");
+}
+
+std::string decimalLimitLabel(int places) {
+    if (places == 1) {
+        return "eine Nachkommastelle";
+    }
+    return std::to_string(places) + " Nachkommastellen";
 }
 
 void showQuestion() {
     const auto& task = session->currentTask();
     const bool killer = session->currentKind() == TaskKind::Killer;
-    const bool endless = roundMode == RoundMode::Endless;
+    const bool endless = session->isEndless();
     const int number = session->questionNumber();
     const int phase = (number - 1) % 10 + 1;
     setAttribute(element("game"), "data-killer", killer ? "true" : "false");
@@ -221,7 +256,9 @@ void showQuestion() {
     setHidden("progress-count", !endless);
     element("progress-track").set("value", phase);
     setText("progress-count", std::to_string(phase) + " / 10");
-    setText("question-label", "Aufgabe " + std::to_string(number));
+    setText("question-label", "Aufgabe " + formatPoints(number));
+    setText("range-label", "Bis " + formatPoints(session->currentNumberLimit()));
+    setText("timer-label", killer ? "Noch" : "Zeit");
     renderExpression(task.expression);
     setFeedback("", "");
     updateHud();
@@ -229,90 +266,99 @@ void showQuestion() {
     auto answer = element("answer");
     answer.set("value", std::string());
     answer.set("readOnly", false);
-    setAttribute(answer, "inputmode", task.allowsDecimal ? "decimal" : "numeric");
+    setAttribute(answer, "inputmode", task.decimalPlaces > 0 ? "decimal" : "numeric");
     answer.call<void>("removeAttribute", std::string("aria-invalid"));
-    setHidden("decimal-hint", !task.allowsDecimal);
+    setHidden("decimal-hint", task.decimalPlaces == 0);
+    if (task.decimalPlaces > 0) {
+        setText("decimal-hint", "Höchstens " + decimalLimitLabel(task.decimalPlaces) + ".");
+    }
     setHidden("check-button", false);
     setHidden("next-button", true);
-    setHidden("timer-panel", timerHidden);
     taskStart = emscripten_get_now();
     clockRunning = true;
-    updateClock(0.0);
+    updateClock(0.0, scoreMultiplierHundredths(session->stats(), session->currentKind(), 0.0));
     answer.call<void>("focus");
 }
 
 void showResults() {
     clockRunning = false;
     const auto& stats = session->stats();
-    setText("result-mode", std::string(operationLabel(operations)) + " · Bis " +
-        std::to_string(static_cast<int>(range)));
-    setText("result-correct", std::to_string(stats.correct) + " / " + std::to_string(stats.answered));
-    setText("result-streak", std::to_string(stats.bestStreak));
+    const std::string modeLabel = session->isEndless() ? "Endlos · " : "Üben · ";
+    setText("result-mode", modeLabel + "Bis " + formatPoints(session->currentNumberLimit()));
+    setText("result-correct", formatPoints(stats.correct) + " / " + formatPoints(stats.answered));
+    setText("result-streak", formatPoints(stats.bestStreak));
     setText("result-score", formatPoints(stats.score));
     showScreen("results");
 }
 
 void handleNavigation(val event) {
-    const std::string target = eventValue(event);
-    if (target == "settings") {
-        settingsReturn = element("setup")["hidden"].as<bool>() ? "home" : "setup";
-    }
+    const auto target = event["currentTarget"]["value"].as<std::string>();
     if (target == "records") {
-        renderRecords();
+        renderRecord();
     }
     if (target == "home") {
         clockRunning = false;
         session.reset();
     }
-    updateSelection();
     showScreen(target);
 }
 
-void handleSettingsBack(val) {
-    updateSelection();
-    showScreen(settingsReturn);
-}
-
 void handleOperationChoice(val event) {
-    const auto value = parseInt(eventValue(event));
-    if (value && *value >= 0 && *value < static_cast<int>(operationLabels.size())) {
-        operations = static_cast<OperationSet>(*value);
-        writeStoredNumber("rechentrainer.operations", *value + 1);
-        element("record-operations").set("value", std::to_string(*value));
-    }
-}
-
-void handlePreferenceChange(val) {
-    timerHidden = element("hide-timer")["checked"].as<bool>();
-    neutralDefeat = element("neutral-defeat")["checked"].as<bool>();
-    writeStoredNumber("rechentrainer.hide-timer", timerHidden);
-    writeStoredNumber("rechentrainer.neutral-defeat", neutralDefeat);
-}
-
-void handleRangeChoice(val event) {
-    const auto value = parseInt(eventValue(event));
+    const auto input = event["currentTarget"];
+    const auto value = parseInt(input["value"].as<std::string>());
     if (!value) {
         return;
     }
-    if (const auto selected = selectNumberRange(*value)) {
-        range = *selected;
-        updateSelection();
-    }
-}
 
-void handleModeChoice(val event) {
-    roundMode = eventValue(event) == "endless" ? RoundMode::Endless : RoundMode::Practice;
+    const auto choice = static_cast<OperationMask>(*value);
+    if (input["checked"].as<bool>()) {
+        practiceOperations |= choice;
+    } else {
+        practiceOperations &= ~choice;
+    }
+    writeStoredNumber("rechentrainer.practice-operations", practiceOperations + 1);
     updateSelection();
 }
 
-void handleRecordFilter(val) {
-    renderRecords();
+void handleRangeChoice(val event) {
+    const auto value = parseInt(event["currentTarget"]["value"].as<std::string>());
+    if (value) {
+        if (const auto selected = selectNumberRange(*value)) {
+            range = *selected;
+            writeStoredNumber("rechentrainer.practice-range", *value);
+            updateSelection();
+        }
+    }
 }
 
-void handleStart(val) {
-    session.emplace(range, roundMode, operations);
+void handleDecimalChoice(val event) {
+    const auto value = parseInt(event["currentTarget"]["value"].as<std::string>());
+    if (value && *value >= 0 && *value <= maximumDecimalPlaces) {
+        decimalPlaces = *value;
+        writeStoredNumber("rechentrainer.division-places", decimalPlaces + 1);
+    }
+}
+
+void startRound(bool endless) {
+    if (endless) {
+        session.emplace();
+    } else {
+        if (practiceOperations == 0) {
+            return;
+        }
+        session.emplace(range, practiceOperations, decimalPlaces);
+    }
+    setText("practice-title", endless ? "Endlosrunde" : "Übungsrunde");
     showScreen("practice");
     showQuestion();
+}
+
+void handleStart(val event) {
+    const auto mode = event["currentTarget"]["value"].as<std::string>();
+    if (mode == "restart" && !session) {
+        return;
+    }
+    startRound(mode == "endless" || (mode == "restart" && session->isEndless()));
 }
 
 void handleAnswerSubmit(val event) {
@@ -322,8 +368,9 @@ void handleAnswerSubmit(val event) {
     }
 
     auto input = element("answer");
-    const double seconds = (emscripten_get_now() - taskStart) / 1000.0;
+    const double seconds = elapsedSeconds();
     const auto previousScore = session->stats().score;
+    const auto multiplier = scoreMultiplierHundredths(session->stats(), session->currentKind(), seconds);
     const auto answer = session->submit(input["value"].as<std::string>(), seconds);
     if (!answer) {
         return;
@@ -331,8 +378,10 @@ void handleAnswerSubmit(val event) {
 
     const auto& task = session->currentTask();
     if (*answer == AnswerStatus::Invalid) {
-        setFeedback(task.allowsDecimal ? "Gib eine Zahl mit höchstens einer Nachkommastelle ein."
-                                      : "Gib eine ganze Zahl ein.", "invalid");
+        const auto message = task.decimalPlaces > 0
+            ? "Gib eine Zahl mit höchstens " + decimalLimitLabel(task.decimalPlaces) + " ein."
+            : "Gib eine ganze Zahl ein.";
+        setFeedback(message, "invalid");
         setAttribute(input, "aria-invalid", "true");
         input.call<void>("focus");
         input.call<void>("select");
@@ -340,14 +389,11 @@ void handleAnswerSubmit(val event) {
     }
 
     clockRunning = false;
-    updateClock(seconds);
+    updateClock(seconds, *answer == AnswerStatus::Correct ? multiplier : 0);
     updateHud();
-    saveRecords();
-    const auto solution = formatAnswer(task.answerTenths);
+    saveRecord();
     if (session->isDefeated()) {
-        setText("defeat-title", neutralDefeat ? "Runde beendet" : "Du bist gestorben");
-        setText("defeat-solution", task.expression + " = " + solution);
-        showScreen("defeat");
+        showDefeat();
         return;
     }
 
@@ -357,7 +403,7 @@ void handleAnswerSubmit(val event) {
         const auto points = formatPoints(session->stats().score - previousScore);
         setFeedback("Richtig! +" + points + " Punkte", "correct");
     } else {
-        setFeedback("Die richtige Lösung ist " + solution + ".", "incorrect");
+        setFeedback("Die richtige Lösung ist " + formatAnswer(task.answerUnits) + ".", "incorrect");
     }
     setHidden("check-button", true);
     setHidden("next-button", false);
@@ -371,9 +417,14 @@ void handleNext(val) {
 }
 
 void handleEnd(val) {
-    if (session) {
-        showResults();
+    if (!session) {
+        return;
     }
+    if (clockRunning && session->expireIfNeeded(elapsedSeconds())) {
+        showDefeat();
+        return;
+    }
+    showResults();
 }
 
 void bindGroup(const char* selector, const char* event, const char* handler) {
@@ -388,12 +439,9 @@ void bindGroup(const char* selector, const char* event, const char* handler) {
 
 EMSCRIPTEN_BINDINGS(math_trainer) {
     emscripten::function("handleNavigation", &handleNavigation);
-    emscripten::function("handleSettingsBack", &handleSettingsBack);
     emscripten::function("handleOperationChoice", &handleOperationChoice);
-    emscripten::function("handlePreferenceChange", &handlePreferenceChange);
     emscripten::function("handleRangeChoice", &handleRangeChoice);
-    emscripten::function("handleModeChoice", &handleModeChoice);
-    emscripten::function("handleRecordFilter", &handleRecordFilter);
+    emscripten::function("handleDecimalChoice", &handleDecimalChoice);
     emscripten::function("handleStart", &handleStart);
     emscripten::function("handleAnswerSubmit", &handleAnswerSubmit);
     emscripten::function("handleNext", &handleNext);
@@ -401,28 +449,30 @@ EMSCRIPTEN_BINDINGS(math_trainer) {
 }
 
 int main() {
-    const double stored = readStoredNumber("rechentrainer.operations");
-    if (stored >= 1 && stored <= operationLabels.size()) {
-        operations = static_cast<OperationSet>(static_cast<int>(stored) - 1);
+    const double storedMask = readStoredNumber("rechentrainer.practice-operations");
+    if (storedMask >= 1 && storedMask <= allOperations + 1) {
+        practiceOperations = static_cast<OperationMask>(storedMask) - 1;
+    } else {
+        const double legacy = readStoredNumber("rechentrainer.operations");
+        if (legacy >= 1 && legacy <= legacyOperationChoices.size()) {
+            practiceOperations = legacyOperationChoices[static_cast<int>(legacy) - 1];
+        }
     }
-    timerHidden = readStoredNumber("rechentrainer.hide-timer") != 0;
-    neutralDefeat = readStoredNumber("rechentrainer.neutral-defeat") != 0;
-
-    const auto operationId = "operations-" + std::to_string(static_cast<int>(operations));
-    element(operationId.c_str()).set("checked", true);
-    element("record-operations").set("value", std::to_string(static_cast<int>(operations)));
-    element("hide-timer").set("checked", timerHidden);
-    element("neutral-defeat").set("checked", neutralDefeat);
+    const double storedPlaces = readStoredNumber("rechentrainer.division-places");
+    if (storedPlaces >= 1 && storedPlaces <= maximumDecimalPlaces + 1) {
+        decimalPlaces = static_cast<int>(storedPlaces) - 1;
+    }
+    const auto storedRange = readStoredNumber("rechentrainer.practice-range");
+    if (storedRange == 10 || storedRange == 100 || storedRange == 1000) {
+        range = static_cast<NumberRange>(static_cast<int>(storedRange));
+    }
 
     bindGroup("[data-nav]", "onclick", "handleNavigation");
     bindGroup("[data-range]", "onclick", "handleRangeChoice");
-    bindGroup("[data-mode]", "onclick", "handleModeChoice");
     bindGroup("[data-start]", "onclick", "handleStart");
     bindGroup("[data-end]", "onclick", "handleEnd");
     bindGroup("[name=operations]", "onchange", "handleOperationChoice");
-    bindGroup("[data-preference]", "onchange", "handlePreferenceChange");
-    bindGroup("[data-record-filter]", "onchange", "handleRecordFilter");
-    element("settings-back").set("onclick", val::module_property("handleSettingsBack"));
+    element("division-places").set("onchange", val::module_property("handleDecimalChoice"));
     element("answer-form").set("onsubmit", val::module_property("handleAnswerSubmit"));
     element("next-button").set("onclick", val::module_property("handleNext"));
     element("home-actions").set("disabled", false);

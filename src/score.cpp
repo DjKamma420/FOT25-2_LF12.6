@@ -4,25 +4,20 @@
 #include <cmath>
 
 double timeMultiplier(double seconds) {
-    seconds = std::max(0.0, seconds);
-    if (seconds < 3.0) {
-        return 1.6 - seconds * (0.2 / 3.0);
-    }
-    if (seconds < 6.0) {
-        return 1.3 - (seconds - 3.0) * (0.2 / 3.0);
-    }
-    if (seconds <= 10.0) {
-        return 1.1 - (seconds - 6.0) * (0.2 / 4.0);
-    }
-    return std::max(0.6, 0.8 - (seconds - 10.0) * 0.02);
+    return 1.6 * std::clamp(1.0 - seconds / 10.0, 0.0, 1.0);
 }
 
-double streakMultiplier(const RunStats& stats) {
-    const int level = std::clamp(stats.streak / 5, 0, 4);
-    return 1.0 + level * 0.25 + stats.killerWinsInStreak * 0.1;
+std::int64_t scoreMultiplierHundredths(const RunStats& stats, TaskKind kind, double seconds) {
+    const bool isKiller = kind == TaskKind::Killer;
+    const int level = std::clamp((stats.streak + 1) / 5, 0, 4);
+    const int killerWins = stats.killerWinsInStreak + (isKiller ? 1 : 0);
+    const double series = 1.0 + level * 0.25 + killerWins * 0.1;
+    const double difficulty = isKiller ? 1.5 : 1.0;
+    return std::llround(100.0 * difficulty * series * timeMultiplier(seconds));
 }
 
 std::int64_t recordCorrectAnswer(RunStats& stats, TaskKind kind, double seconds) {
+    const auto multiplier = scoreMultiplierHundredths(stats, kind, seconds);
     ++stats.answered;
     ++stats.correct;
     ++stats.streak;
@@ -32,9 +27,8 @@ std::int64_t recordCorrectAnswer(RunStats& stats, TaskKind kind, double seconds)
     if (isKiller) {
         ++stats.killerWinsInStreak;
     }
-    const int basePoints = isKiller ? 200 : 100;
-    const double difficulty = isKiller ? 1.5 : 1.0;
-    const auto points = std::llround(basePoints * difficulty * streakMultiplier(stats) * timeMultiplier(seconds));
+    // Base points are 100 for normal tasks and 200 for killer tasks.
+    const auto points = multiplier * (isKiller ? 2 : 1);
     stats.score += points;
     return points;
 }

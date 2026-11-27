@@ -1,6 +1,7 @@
 #ifndef MATH_TRAINER_TASK_H
 #define MATH_TRAINER_TASK_H
 
+#include <cstdint>
 #include <string>
 
 enum class Operation {
@@ -16,10 +17,13 @@ enum class NumberRange {
     UpTo1000 = 1000
 };
 
+inline constexpr int answerScale = 1000;
+inline constexpr int maximumDecimalPlaces = 3;
+
 struct Task {
     std::string expression;
-    int answerTenths;
-    bool allowsDecimal = false;
+    std::int64_t answerUnits;
+    int decimalPlaces = 0;
 };
 
 #endif

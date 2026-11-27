@@ -186,8 +186,7 @@ button:disabled { cursor: default; opacity: 0.56; }
 legend { margin-bottom: 0.45rem; color: var(--gold); }
 
 .option-grid,
-.settings-grid,
-.record-filters {
+.settings-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.55rem;
@@ -195,18 +194,7 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
 
 .range-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
-.current-choice {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.35rem 0.65rem;
-    color: var(--muted);
-}
-
-.current-choice strong { color: var(--ink); }
-
-.settings-grid label,
-.secondary-settings label {
+.settings-grid label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -223,26 +211,18 @@ legend { margin-bottom: 0.45rem; color: var(--gold); }
     background: #3a161a;
 }
 
-.settings-grid label:last-child { grid-column: 1 / -1; }
-.secondary-settings label + label { margin-top: 0.5rem; }
-.secondary-settings small { color: var(--muted); }
-.settings-grid input,
-.secondary-settings input { accent-color: #c95e54; flex: none; }
+.settings-grid input { accent-color: #c95e54; flex: none; }
 
-.record-filters label { display: grid; gap: 0.25rem; }
-.record-filters select {
+.division-options { display: grid; gap: 0.35rem; color: var(--gold); }
+.division-options select {
     min-width: 0;
     min-height: 2.75rem;
+    padding-inline: 0.5rem;
     border: 1px solid var(--outline);
     border-radius: 0.3rem;
     background: #1b1114;
     color: var(--ink);
 }
-
-.record-table { width: 100%; margin-top: 1rem; border-collapse: collapse; }
-.record-table th,
-.record-table td { padding: 0.65rem 0.2rem; text-align: left; border-bottom: 1px solid #56302a; }
-.record-table td { font-variant-numeric: tabular-nums; }
 
 .primary { width: 100%; margin-top: 0.8rem; font: 1.16rem Georgia, serif; color: #ffe1ce; }
 .text-button { padding: 0.45rem 0.15rem; border: 0; background: transparent; color: var(--gold); text-decoration: underline; }
@@ -282,6 +262,8 @@ progress { width: 100%; height: 0.48rem; accent-color: #ad362e; }
     font-variant-numeric: tabular-nums;
 }
 
+.game[data-killer="true"] #timer { color: var(--red-bright); font-weight: 700; }
+
 .challenge {
     display: grid;
     align-content: center;
@@ -309,6 +291,8 @@ progress { width: 100%; height: 0.48rem; accent-color: #ad362e; }
 
 .question .operator { color: #d96b5e; }
 .game[data-killer="true"] .question { font-size: clamp(1.55rem, 6.5cqw, 3.1rem); }
+.question[data-long="true"],
+.game[data-killer="true"] .question[data-long="true"] { font-size: clamp(1.3rem, 5.5cqw, 2.6rem); }
 
 .answer-form { width: min(100%, 28rem); margin: 0 auto; }
 .answer-field { width: 100%; min-height: 3rem; text-align: center; font-size: 1.6rem; }

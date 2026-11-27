@@ -15,7 +15,7 @@ struct RunStats {
 };
 
 double timeMultiplier(double seconds);
-double streakMultiplier(const RunStats& stats);
+std::int64_t scoreMultiplierHundredths(const RunStats& stats, TaskKind kind, double seconds);
 std::int64_t recordCorrectAnswer(RunStats& stats, TaskKind kind, double seconds);
 void recordIncorrectAnswer(RunStats& stats);
 

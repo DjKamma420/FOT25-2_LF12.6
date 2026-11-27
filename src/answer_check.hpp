@@ -13,6 +13,6 @@ enum class AnswerStatus {
 };
 
 AnswerStatus checkAnswer(const Task& task, std::string_view input);
-std::string formatAnswer(int answerTenths);
+std::string formatAnswer(std::int64_t answerUnits);
 
 #endif
